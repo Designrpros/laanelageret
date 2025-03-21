@@ -9,14 +9,8 @@ import { db } from "../../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { FaShoppingCart } from "react-icons/fa";
 
-// Define the props type for a dynamic route in a Client Component
-interface LocationDetailProps {
-  params: {
-    id: string;
-  };
-}
-
-const LocationDetail = ({ params }: LocationDetailProps) => {
+// No separate interface, inline props typing
+const LocationDetail = ({ params }: { params: { id: string } }) => {
   interface Item {
     id: string;
     name: string;
