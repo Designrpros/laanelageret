@@ -8,24 +8,190 @@ import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import { db } from "../../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { FaShoppingCart } from "react-icons/fa";
+import { NextPage } from "next"; // Import NextPage for proper typing
 
-// Define the props type for a dynamic route in a Client Component
-interface LocationDetailProps {
-  params: { id: string };
-}
-
-interface Item {
+// Define the props type for a dynamic route
+interface Params {
   id: string;
-  name: string;
-  category: string;
-  subcategory?: string;
-  imageUrl: string;
-  rented: number;
-  inStock: number;
-  description?: string;
-  gallery?: string[];
 }
 
+// Use NextPage with the params type for Client Components
+const LocationDetail: NextPage<{ params: Params }> = ({ params }) => {
+  interface Item {
+    id: string;
+    name: string;
+    category: string;
+    subcategory?: string;
+    imageUrl: string;
+    rented: number;
+    inStock: number;
+    description?: string;
+    gallery?: string[];
+  }
+
+  const locationId = parseInt(params.id, 10);
+  const [items, setItems] = useState<Item[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const unsubscribe = onSnapshot(
+      collection(db, "items"),
+      (snapshot) => {
+        const fetchedItems = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          rented: doc.data().rented || 0,
+          inStock: doc.data().inStock || 0,
+          description: doc.data().description || "Ingen beskrivelse tilgjengelig.",
+          gallery: doc.data().gallery || [doc.data().imageUrl],
+        })) as Item[];
+        setItems(fetchedItems);
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching items:", error);
+        setIsLoading(false);
+      }
+    );
+    return () => unsubscribe();
+  }, []);
+
+  const locations = [
+    { id: 4, name: "Stabekk", lat: 59.90921845652782, lng: 10.611649286507243 },
+    { id: 1, name: "Oslo", lat: 59.9139, lng: 10.7522 },
+    { id: 2, name: "Bergen", lat: 60.3913, lng: 5.3221 },
+  ];
+
+  const selectedLocation = locations.find((loc) => loc.id === locationId);
+  const mapCenter = {
+    lat: selectedLocation?.lat || 59.90921845652782,
+    lng: selectedLocation?.lng || 10.611649286507243,
+  };
+
+  const categories = ["All", ...new Set(items.map((item) => item.category))];
+  const filteredItems =
+    selectedCategory === "All"
+      ? items
+      : items.filter((item) => item.category === selectedCategory);
+
+  const handleBorrow = (itemId: string) => {
+    const item = items.find((i) => i.id === itemId);
+    if (selectedLocation && item) {
+      alert(`Borrowing ${item.name} from ${selectedLocation.name}!`);
+    }
+  };
+
+  const toggleFlip = (itemId: string) => {
+    setFlippedCards((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) newSet.delete(itemId);
+      else newSet.add(itemId);
+      return newSet;
+    });
+  };
+
+  if (!selectedLocation) {
+    return <div>Location not found</div>;
+  }
+
+  return (
+    <Container>
+      <LeftPanel>
+        <Title
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+        >
+          {selectedLocation.name}
+        </Title>
+        <FilterContainer>
+          {categories.map((category) => (
+            <FilterButton
+              key={category}
+              isActive={selectedCategory === category}
+              onClick={() => setSelectedCategory(category)}
+            >
+              {category}
+            </FilterButton>
+          ))}
+        </FilterContainer>
+        {isLoading ? (
+          <p>Laster...</p>
+        ) : (
+          <ItemGrid>
+            {filteredItems.length > 0 ? (
+              filteredItems.map((item, index) => (
+                <StoreItemCard
+                  key={item.id}
+                  onClick={() => toggleFlip(item.id)}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: index * 0.2 }}
+                >
+                  <CardInner
+                    animate={{ rotateY: flippedCards.has(item.id) ? 180 : 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <CardFront>
+                      <ItemImage src={item.imageUrl} alt={item.name} />
+                      <ItemContent>
+                        <ItemName>{item.name}</ItemName>
+                        <ItemCategory>
+                          {item.category}
+                          {item.subcategory ? ` - ${item.subcategory}` : ""}
+                        </ItemCategory>
+                      </ItemContent>
+                      <StockBadge>
+                        {item.rented}/{item.inStock}
+                      </StockBadge>
+                      <BorrowIcon
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBorrow(item.id);
+                        }}
+                      />
+                    </CardFront>
+                    <CardBack>
+                      <BackContent>
+                        <ItemName>{item.name}</ItemName>
+                        <ItemCategory>
+                          {item.category}
+                          {item.subcategory ? ` - ${item.subcategory}` : ""}
+                        </ItemCategory>
+                        <Description>{item.description}</Description>
+                        <Gallery>
+                          {item.gallery?.map((url, idx) => (
+                            <GalleryImage
+                              key={idx}
+                              src={url}
+                              alt={`${item.name} ${idx}`}
+                            />
+                          ))}
+                        </Gallery>
+                      </BackContent>
+                    </CardBack>
+                  </CardInner>
+                </StoreItemCard>
+              ))
+            ) : (
+              <p>Ingen varer tilgjengelig i denne kategorien.</p>
+            )}
+          </ItemGrid>
+        )}
+      </LeftPanel>
+      <RightPanel>
+        <MapWrapper>
+          <LocationMap center={mapCenter} />
+        </MapWrapper>
+      </RightPanel>
+    </Container>
+  );
+};
+
+// Styled components (unchanged)
 const Container = styled.div`
   display: flex;
   width: 100%;
@@ -211,20 +377,7 @@ const GalleryImage = styled.img`
   border-radius: 4px;
 `;
 
-const locations = [
-  { id: 4, name: "Stabekk", lat: 59.90921845652782, lng: 10.611649286507243 },
-  { id: 1, name: "Oslo", lat: 59.9139, lng: 10.7522 },
-  { id: 2, name: "Bergen", lat: 60.3913, lng: 5.3221 },
-];
-
-type LocationType = {
-  id: number;
-  name: string;
-  lat: number;
-  lng: number;
-};
-
-const googleMapsApiKey = "AIzaSyAeaLX1WrWu5H5CtGmSmX718T4AaadotbA";
+const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!;
 
 const LocationMap = ({ center }: { center: google.maps.LatLngLiteral }) => {
   return (
@@ -240,159 +393,4 @@ const LocationMap = ({ center }: { center: google.maps.LatLngLiteral }) => {
   );
 };
 
-export default function LocationDetail({ params }: LocationDetailProps) {
-  const locationId = parseInt(params.id, 10);
-  const selectedLocation = locations.find((loc) => loc.id === locationId);
-  const [items, setItems] = useState<Item[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    setIsLoading(true);
-    const unsubscribe = onSnapshot(
-      collection(db, "items"),
-      (snapshot) => {
-        const fetchedItems = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          rented: doc.data().rented || 0,
-          inStock: doc.data().inStock || 0,
-          description: doc.data().description || "Ingen beskrivelse tilgjengelig.",
-          gallery: doc.data().gallery || [doc.data().imageUrl],
-        })) as Item[];
-        setItems(fetchedItems);
-        setIsLoading(false);
-      },
-      (error) => {
-        console.error("Error fetching items:", error);
-        setIsLoading(false);
-      }
-    );
-    return () => unsubscribe();
-  }, []);
-
-  const mapCenter = {
-    lat: selectedLocation?.lat || 59.90921845652782,
-    lng: selectedLocation?.lng || 10.611649286507243,
-  };
-
-  const categories = ["All", ...new Set(items.map((item) => item.category))];
-  const filteredItems =
-    selectedCategory === "All"
-      ? items
-      : items.filter((item) => item.category === selectedCategory);
-
-  const handleBorrow = (itemId: string) => {
-    const item = items.find((i) => i.id === itemId);
-    if (selectedLocation && item) {
-      alert(`Borrowing ${item.name} from ${selectedLocation.name}!`);
-    }
-  };
-
-  const toggleFlip = (itemId: string) => {
-    setFlippedCards((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) newSet.delete(itemId);
-      else newSet.add(itemId);
-      return newSet;
-    });
-  };
-
-  if (!selectedLocation) {
-    return <div>Location not found</div>;
-  }
-
-  return (
-    <Container>
-      <LeftPanel>
-        <Title
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-        >
-          {selectedLocation.name}
-        </Title>
-        <FilterContainer>
-          {categories.map((category) => (
-            <FilterButton
-              key={category}
-              isActive={selectedCategory === category}
-              onClick={() => setSelectedCategory(category)}
-            >
-              {category}
-            </FilterButton>
-          ))}
-        </FilterContainer>
-        {isLoading ? (
-          <p>Laster...</p>
-        ) : (
-          <ItemGrid>
-            {filteredItems.length > 0 ? (
-              filteredItems.map((item, index) => (
-                <StoreItemCard
-                  key={item.id}
-                  onClick={() => toggleFlip(item.id)}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: index * 0.2 }}
-                >
-                  <CardInner
-                    animate={{ rotateY: flippedCards.has(item.id) ? 180 : 0 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <CardFront>
-                      <ItemImage src={item.imageUrl} alt={item.name} />
-                      <ItemContent>
-                        <ItemName>{item.name}</ItemName>
-                        <ItemCategory>
-                          {item.category}
-                          {item.subcategory ? ` - ${item.subcategory}` : ""}
-                        </ItemCategory>
-                      </ItemContent>
-                      <StockBadge>
-                        {item.rented}/{item.inStock}
-                      </StockBadge>
-                      <BorrowIcon
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBorrow(item.id);
-                        }}
-                      />
-                    </CardFront>
-                    <CardBack>
-                      <BackContent>
-                        <ItemName>{item.name}</ItemName>
-                        <ItemCategory>
-                          {item.category}
-                          {item.subcategory ? ` - ${item.subcategory}` : ""}
-                        </ItemCategory>
-                        <Description>{item.description}</Description>
-                        <Gallery>
-                          {item.gallery?.map((url, idx) => (
-                            <GalleryImage
-                              key={idx}
-                              src={url}
-                              alt={`${item.name} ${idx}`}
-                            />
-                          ))}
-                        </Gallery>
-                      </BackContent>
-                    </CardBack>
-                  </CardInner>
-                </StoreItemCard>
-              ))
-            ) : (
-              <p>Ingen varer tilgjengelig i denne kategorien.</p>
-            )}
-          </ItemGrid>
-        )}
-      </LeftPanel>
-      <RightPanel>
-        <MapWrapper>
-          <LocationMap center={mapCenter} />
-        </MapWrapper>
-      </RightPanel>
-    </Container>
-  );
-}
+export default LocationDetail;

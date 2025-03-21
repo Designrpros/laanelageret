@@ -55,7 +55,6 @@ const LocationCard = styled(motion.div)`
 
   @media (max-width: 768px) {
     max-width: 90%; // Make it more flexible for smaller screens
-  
   }
 `;
 
