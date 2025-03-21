@@ -8,15 +8,15 @@ import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import { db } from "../../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { FaShoppingCart } from "react-icons/fa";
-import { NextPage } from "next"; // Import NextPage for proper typing
 
-// Define the props type for a dynamic route
-interface Params {
-  id: string;
+// Define the props type for a dynamic route in a Client Component
+interface LocationDetailProps {
+  params: {
+    id: string;
+  };
 }
 
-// Use NextPage with the params type for Client Components
-const LocationDetail: NextPage<{ params: Params }> = ({ params }) => {
+const LocationDetail = ({ params }: LocationDetailProps) => {
   interface Item {
     id: string;
     name: string;
@@ -191,7 +191,7 @@ const LocationDetail: NextPage<{ params: Params }> = ({ params }) => {
   );
 };
 
-// Styled components (unchanged)
+// Styled components
 const Container = styled.div`
   display: flex;
   width: 100%;
