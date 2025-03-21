@@ -1,7 +1,10 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true, // Ensures React best practices
+  swcMinify: true, // Improves build performance
+  images: {
+    domains: ["firebasestorage.googleapis.com"], // Allows Firebase-hosted images
+  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

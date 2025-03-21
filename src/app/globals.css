@@ -1,3 +1,4 @@
+/* globals.css or inside styled-components GlobalStyles */
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -14,12 +15,9 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
-}
-
-body {
+  font-family: Helvetica, Arial, sans-serif; /* Ensures Helvetica everywhere */
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
