@@ -9,6 +9,11 @@ import { db } from "../../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { FaShoppingCart } from "react-icons/fa";
 
+// Define the props type for a dynamic route in a Client Component
+interface LocationDetailProps {
+  params: { id: string };
+}
+
 interface Item {
   id: string;
   name: string;
@@ -119,8 +124,8 @@ const CardBack = styled.div`
   height: 100%;
   backface-visibility: hidden;
   transform: rotateY(180deg);
-  background: #fff; /* Same quality as front */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Same shadow */
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border-radius: 8px;
   padding: 1.5rem;
   overflow-y: auto;
@@ -188,7 +193,7 @@ const BackContent = styled.div`
 const Description = styled.p`
   font-size: 0.9rem;
   margin: 0.5rem 0;
-  max-height: 80px; /* Increased to fit */
+  max-height: 80px;
   overflow-y: auto;
 `;
 
@@ -235,7 +240,7 @@ const LocationMap = ({ center }: { center: google.maps.LatLngLiteral }) => {
   );
 };
 
-export default function LocationDetail({ params }: { params: { id: string } }) {
+export default function LocationDetail({ params }: LocationDetailProps) {
   const locationId = parseInt(params.id, 10);
   const selectedLocation = locations.find((loc) => loc.id === locationId);
   const [items, setItems] = useState<Item[]>([]);
@@ -273,9 +278,10 @@ export default function LocationDetail({ params }: { params: { id: string } }) {
   };
 
   const categories = ["All", ...new Set(items.map((item) => item.category))];
-  const filteredItems = selectedCategory === "All"
-    ? items
-    : items.filter((item) => item.category === selectedCategory);
+  const filteredItems =
+    selectedCategory === "All"
+      ? items
+      : items.filter((item) => item.category === selectedCategory);
 
   const handleBorrow = (itemId: string) => {
     const item = items.find((i) => i.id === itemId);
@@ -347,7 +353,12 @@ export default function LocationDetail({ params }: { params: { id: string } }) {
                       <StockBadge>
                         {item.rented}/{item.inStock}
                       </StockBadge>
-                      <BorrowIcon onClick={(e) => { e.stopPropagation(); handleBorrow(item.id); }} />
+                      <BorrowIcon
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBorrow(item.id);
+                        }}
+                      />
                     </CardFront>
                     <CardBack>
                       <BackContent>
@@ -359,7 +370,11 @@ export default function LocationDetail({ params }: { params: { id: string } }) {
                         <Description>{item.description}</Description>
                         <Gallery>
                           {item.gallery?.map((url, idx) => (
-                            <GalleryImage key={idx} src={url} alt={`${item.name} ${idx}`} />
+                            <GalleryImage
+                              key={idx}
+                              src={url}
+                              alt={`${item.name} ${idx}`}
+                            />
                           ))}
                         </Gallery>
                       </BackContent>
