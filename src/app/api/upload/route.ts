@@ -3,16 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getStorage } from "firebase-admin/storage";
 import { getAuth } from "firebase-admin/auth";
-import serviceAccountRaw from "../../../../laane-lageret-firebase-adminsdk-fbsvc-e4040d2ccf.json"; // Correct path from src/app/api/upload/
 
-// Map JSON to ServiceAccount type
-const serviceAccount: import("firebase-admin").ServiceAccount = {
-  projectId: serviceAccountRaw.project_id,
-  privateKey: serviceAccountRaw.private_key,
-  clientEmail: serviceAccountRaw.client_email,
+// Initialize Firebase Admin using environment variables
+const serviceAccount = {
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"), // Fix newline formatting
 };
 
-// Initialize Firebase Admin
 if (!getApps().length) {
   try {
     initializeApp({
@@ -25,7 +23,6 @@ if (!getApps().length) {
     throw error;
   }
 }
-
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get("authorization");
