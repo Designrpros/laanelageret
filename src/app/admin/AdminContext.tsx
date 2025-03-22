@@ -5,14 +5,18 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 
 interface AdminContextType {
   activeTab: string;
-  onTabChange: (tab: string) => void; // Changed from setActiveTab
+  onTabChange: (tab: string) => void;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const [activeTab, setActiveTab] = useState("home");
-  const onTabChange = (tab: string) => setActiveTab(tab); // Wrapper for setActiveTab
+
+  const onTabChange = (tab: string) => {
+    console.log("Context onTabChange triggered with tab:", tab);
+    setActiveTab(tab);
+  };
 
   return (
     <AdminContext.Provider value={{ activeTab, onTabChange }}>

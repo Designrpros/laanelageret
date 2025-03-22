@@ -6,7 +6,7 @@ import styled from "styled-components";
 import AdminToolbar from "./components/AdminToolbar";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import { AdminProvider, useAdminContext } from "./AdminContext";
+import { AdminProvider } from "./AdminContext";
 
 const LayoutWrapper = styled.div`
   display: flex;
@@ -44,7 +44,11 @@ const ToggleButton = styled.button<{ $isOpen: boolean }>`
   }
 `;
 
-const Layout: React.FC<{ children: ReactNode }> = ({ children }) => {
+interface LayoutProps {
+  children: ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
@@ -56,7 +60,7 @@ const Layout: React.FC<{ children: ReactNode }> = ({ children }) => {
   return (
     <AdminProvider>
       <LayoutWrapper>
-        <AdminToolbar key="admin-toolbar" isOpen={isSidebarOpen} />
+        <AdminToolbar isOpen={isSidebarOpen} />
         <ToggleButton $isOpen={isSidebarOpen} onClick={() => setIsSidebarOpen((prev) => !prev)}>
           {isSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
         </ToggleButton>

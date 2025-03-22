@@ -13,7 +13,6 @@ import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 import { useAdminContext } from "../AdminContext";
 
-// src/app/admin/components/AdminToolbar.tsx (excerpt)
 const AdminSidebar = styled.div<{ $isOpen: boolean }>`
   position: fixed;
   top: 0;
@@ -26,7 +25,7 @@ const AdminSidebar = styled.div<{ $isOpen: boolean }>`
   flex-direction: column;
   padding-top: 20px;
   box-shadow: ${({ $isOpen }) => ($isOpen ? "1px 0 3px rgba(0, 0, 0, 0.1)" : "none")};
-  z-index: 1000; /* Stays below Toolbar’s Menu (1100) */
+  z-index: 1000;
   transform: ${({ $isOpen }) => ($isOpen ? "translateX(0)" : "translateX(-100%)")};
   transition: transform 0.2s ease-out;
 `;
