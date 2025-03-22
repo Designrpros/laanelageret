@@ -6,66 +6,6 @@ import styled from "styled-components";
 import { db } from "../../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 
-const DashboardContainer = styled.div`
-  font-family: "Helvetica", Arial, sans-serif;
-  background-color: #333;
-  padding: 30px;
-  border-radius: 12px;
-  color: white;
-  max-width: 1000px;
-  margin: 40px auto;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-`;
-
-const Title = styled.h1`
-  font-size: 28px;
-  font-weight: bold;
-  margin-bottom: 10px;
-  text-align: center;
-`;
-
-const Description = styled.p`
-  font-size: 18px;
-  opacity: 0.9;
-  margin-bottom: 20px;
-  text-align: center;
-`;
-
-const StatsContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 20px;
-  border-radius: 8px;
-`;
-
-const StatBox = styled.div`
-  text-align: center;
-`;
-
-const StatNumber = styled.div`
-  font-size: 24px;
-  font-weight: bold;
-  color: #ffdd00;
-`;
-
-const StatLabel = styled.div`
-  font-size: 16px;
-  opacity: 0.8;
-`;
-
-const LoadingMessage = styled.div`
-  text-align: center;
-  opacity: 0.7;
-`;
-
-const ErrorMessage = styled.div`
-  color: #ff4444;
-  text-align: center;
-  margin-top: 20px;
-`;
-
 const Home = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [activeLoans, setActiveLoans] = useState(0);
@@ -177,3 +117,63 @@ const Home = () => {
 };
 
 export default Home;
+
+const DashboardContainer = styled.div`
+  font-family: "Helvetica", Arial, sans-serif;
+  background-color: #333;
+  padding: 30px;
+  border-radius: 12px;
+  color: white;
+  max-width: 1000px;
+  margin: 40px auto;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+`;
+
+const Title = styled.h1`
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
+`;
+
+const Description = styled.p`
+  font-size: 18px;
+  opacity: 0.9;
+  margin-bottom: 20px;
+  text-align: center;
+`;
+
+const StatsContainer = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 8px;
+`;
+
+const StatBox = styled.div`
+  text-align: center;
+`;
+
+const StatNumber = styled.div`
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffdd00;
+`;
+
+const StatLabel = styled.div`
+  font-size: 16px;
+  opacity: 0.8;
+`;
+
+const LoadingMessage = styled.div`
+  text-align: center;
+  opacity: 0.7;
+`;
+
+const ErrorMessage = styled.div`
+  color: #ff4444;
+  text-align: center;
+  margin-top: 20px;
+`;
