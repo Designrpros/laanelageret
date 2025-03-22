@@ -35,7 +35,7 @@ const Overlay = styled.div`
 
 // Text container
 const TextFrame = styled.div`
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.9);
   padding: 20px 30px;
   border-radius: 10px;
   display: inline-block;

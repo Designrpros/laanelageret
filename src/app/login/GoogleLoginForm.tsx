@@ -23,7 +23,6 @@ const GoogleLoginForm = () => {
         setUser(null);
       }
     });
-
     return () => unsubscribe();
   }, [router, returnTo]);
 
@@ -90,6 +89,8 @@ const GoogleLoginForm = () => {
   );
 };
 
+export default GoogleLoginForm;
+
 // Styled components
 const FormContainer = styled.div`
   background: white;
@@ -142,5 +143,3 @@ const ErrorMessage = styled.div`
   font-size: 0.875rem;
   text-align: center;
 `;
-
-export default GoogleLoginForm;

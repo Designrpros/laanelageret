@@ -1,16 +1,12 @@
+// src/app/admin/layout.tsx
 "use client";
 
-import React, { ReactNode, useState } from "react";
+import React, { ReactNode, useState, useEffect } from "react";
 import styled from "styled-components";
 import AdminToolbar from "./components/AdminToolbar";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-
-interface LayoutProps {
-  children: ReactNode;
-  activeTab: string;
-  onTabChange: (tab: string) => void;
-}
+import { AdminProvider, useAdminContext } from "./AdminContext";
 
 const LayoutWrapper = styled.div`
   display: flex;
@@ -18,56 +14,55 @@ const LayoutWrapper = styled.div`
   background: #fff;
 `;
 
-const MainContent = styled.div<{ sidebarOpen: boolean }>`
-  margin-left: ${({ sidebarOpen }) => (sidebarOpen ? "200px" : "24px")}; /* 24px for chevron width */
+const MainContent = styled.div<{ $sidebarOpen: boolean }>`
+  margin-left: ${({ $sidebarOpen }) => ($sidebarOpen ? "200px" : "24px")};
   padding: 20px;
   flex-grow: 1;
-  background-color: #fff;
-  color: #1a1a1a;
-  transition: margin-left 0.3s ease;
-
-  @media (max-width: 768px) {
-    padding: 15px;
-  }
+  width: ${({ $sidebarOpen }) => ($sidebarOpen ? "calc(100% - 200px)" : "calc(100% - 24px)")};
+  transition: margin-left 0.2s ease-out, width 0.2s ease-out;
 `;
 
-const ToggleButton = styled.button<{ isOpen: boolean }>`
+const ToggleButton = styled.button<{ $isOpen: boolean }>`
   position: fixed;
   top: 50%;
-  left: ${({ isOpen }) => (isOpen ? "190px" : "0")}; /* Closer to edge: 0 when closed, 190px when open */
+  left: ${({ $isOpen }) => ($isOpen ? "190px" : "0")};
   transform: translateY(-50%);
-  background: transparent; /* No background */
-  color: #1a1a1a; /* Black icon to match theme */
+  background: transparent;
+  color: #1a1a1a;
   border: none;
-  padding: 4px; /* Reduced padding for minimalism */
+  padding: 4px;
   cursor: pointer;
   z-index: 1100;
-  transition: left 0.3s ease;
+  transition: left 0.2s ease-out;
 
   &:hover {
-    color: #333; /* Slightly darker on hover */
+    color: #333;
   }
 
   svg {
-    font-size: 24px; /* Keep icon size */
+    font-size: 24px;
   }
 `;
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Default to open on desktop
+const Layout: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  useEffect(() => {
+    console.log("Layout mounted");
+  }, []);
+
+  console.log("Layout render");
 
   return (
-    <LayoutWrapper>
-      <AdminToolbar activeTab={activeTab} onTabChange={onTabChange} isOpen={isSidebarOpen} />
-      <ToggleButton isOpen={isSidebarOpen} onClick={toggleSidebar}>
-        {isSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-      </ToggleButton>
-      <MainContent sidebarOpen={isSidebarOpen}>{children}</MainContent>
-    </LayoutWrapper>
+    <AdminProvider>
+      <LayoutWrapper>
+        <AdminToolbar key="admin-toolbar" isOpen={isSidebarOpen} />
+        <ToggleButton $isOpen={isSidebarOpen} onClick={() => setIsSidebarOpen((prev) => !prev)}>
+          {isSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+        </ToggleButton>
+        <MainContent $sidebarOpen={isSidebarOpen}>{children}</MainContent>
+      </LayoutWrapper>
+    </AdminProvider>
   );
 };
 

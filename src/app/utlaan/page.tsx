@@ -11,6 +11,7 @@ const Section = styled.section`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: #fff;
   align-items: center;
   justify-content: center;
   padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 3vw, 2rem); /* Responsive padding */

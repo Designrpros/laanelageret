@@ -1,3 +1,4 @@
+// src/app/components/Toolbar.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -13,14 +14,14 @@ const Navbar = styled.nav`
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 1000; /* High z-index to ensure it’s above everything */
+  z-index: 1200;
   display: flex;
   align-items: center;
   padding: 10px;
 `;
 
 interface BurgerIconProps {
-  $isOpen: boolean; // Use $ prefix to mark it as transient (won’t pass to DOM)
+  $isOpen: boolean;
 }
 
 const BurgerIcon = styled.div<BurgerIconProps>`
@@ -29,7 +30,7 @@ const BurgerIcon = styled.div<BurgerIconProps>`
   gap: 6px;
   cursor: pointer;
   padding: 10px;
-  z-index: 1001; /* Even higher than Navbar to ensure topmost visibility */
+  z-index: 1201;
 
   div {
     width: 35px;
@@ -64,7 +65,7 @@ const Menu = styled.div<{ $isMenuOpen: boolean }>`
   width: 100%;
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(8px);
-  z-index: 999; /* Below BurgerIcon but above other content */
+  z-index: 1100;
   animation: fadeIn 0.3s ease-in-out;
 
   @keyframes fadeIn {
@@ -91,7 +92,7 @@ const BottomWrapper = styled.div`
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 999;
+  z-index: 1100;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -146,34 +147,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ activeTab, onTabChange }) => {
 
       <Menu $isMenuOpen={isMenuOpen}>
         <MenuItemsWrapper>
-          <Link href="/" passHref legacyBehavior>
-            <MenuItem $isActive={activeTab === "Home"} onClick={() => handleTabClick("Home")}>
-              Home
-            </MenuItem>
-          </Link>
-          <Link href="/utlaan" passHref legacyBehavior>
-            <MenuItem $isActive={activeTab === "utlaan"} onClick={() => handleTabClick("utlaan")}>
-              Utlån
-            </MenuItem>
-          </Link>
-          <Link href="/info" passHref legacyBehavior>
-            <MenuItem $isActive={activeTab === "info"} onClick={() => handleTabClick("info")}>
-              Info
-            </MenuItem>
-          </Link>
+          <Link href="/" passHref legacyBehavior><MenuItem $isActive={activeTab === "Home"} onClick={() => handleTabClick("Home")}>Home</MenuItem></Link>
+          <Link href="/utlaan" passHref legacyBehavior><MenuItem $isActive={activeTab === "utlaan"} onClick={() => handleTabClick("utlaan")}>Utlån</MenuItem></Link>
+          <Link href="/lever" passHref legacyBehavior><MenuItem $isActive={activeTab === "lever"} onClick={() => handleTabClick("lever")}>Lever</MenuItem></Link>
+          <Link href="/info" passHref legacyBehavior><MenuItem $isActive={activeTab === "info"} onClick={() => handleTabClick("info")}>Info</MenuItem></Link>
         </MenuItemsWrapper>
 
         <BottomWrapper>
-          <Link href="/login" passHref legacyBehavior>
-            <MenuItem $isActive={activeTab === "login"} onClick={() => handleTabClick("login")}>
-              Login
-            </MenuItem>
-          </Link>
-          <Link href="/admin" passHref legacyBehavior>
-            <MenuItem $isActive={activeTab === "admin"} onClick={() => handleTabClick("admin")}>
-              Admin
-            </MenuItem>
-          </Link>
+          <Link href="/login" passHref legacyBehavior><MenuItem $isActive={activeTab === "login"} onClick={() => handleTabClick("login")}>Login</MenuItem></Link>
+          <Link href="/admin" passHref legacyBehavior><MenuItem $isActive={activeTab === "admin"} onClick={() => handleTabClick("admin")}>Admin</MenuItem></Link>
         </BottomWrapper>
       </Menu>
     </>

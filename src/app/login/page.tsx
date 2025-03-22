@@ -1,6 +1,6 @@
 // Server Component
 import { Suspense } from "react";
-import PhoneLoginForm from "./PhoneLoginForm";
+import PhoneLoginForm from "./GoogleLoginForm";
 
 export default function LoginPage() {
   return (

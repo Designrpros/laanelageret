@@ -25,7 +25,6 @@ const LoginForm = () => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUser(user);
-        router.push(returnTo);
       } else {
         setUser(null);
       }
