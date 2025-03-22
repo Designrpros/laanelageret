@@ -116,6 +116,8 @@ const Home = () => {
   );
 };
 
+export default Home;
+
 const DashboardContainer = styled.div`
   font-family: "Helvetica", Arial, sans-serif;
   background-color: #333;
@@ -175,5 +177,3 @@ const ErrorMessage = styled.div`
   text-align: center;
   margin-top: 20px;
 `;
-
-export default Home;
