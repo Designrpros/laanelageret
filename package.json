@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^6.4.8",
+    "@mui/material": "^6.4.8",
     "@react-google-maps/api": "^2.20.6",
     "firebase": "^10.13.2",
     "firebase-admin": "^12.5.0",

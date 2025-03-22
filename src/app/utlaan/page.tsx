@@ -1,12 +1,12 @@
 "use client";
 
-import React from 'react';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
-import { useRouter } from 'next/navigation';
+import React from "react";
+import styled from "styled-components";
+import { motion } from "framer-motion";
+import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+import { useRouter } from "next/navigation";
 
-// Styled Components
+// Styled Components - background: #fff;
 const Section = styled.section`
   min-height: 100vh;
   display: flex;
@@ -18,15 +18,13 @@ const Section = styled.section`
 `;
 
 const Title = styled(motion.h1)`
-  font-size: 3rem;
-  font-weight: bold;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
   text-transform: uppercase;
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
   text-align: center;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 8px 12px;
-  border-radius: 5px;
-  color: white;
+  color: #1a1a1a;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const Grid = styled.div`
@@ -40,21 +38,22 @@ const Grid = styled.div`
 
 const LocationCard = styled(motion.div)`
   position: relative;
-  max-width: 500px;  // Increased the max-width for bigger cards
+  max-width: 500px;
   width: 100%;
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  background: white;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.3s ease-in-out;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 
   &:hover {
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
   }
 
   @media (max-width: 768px) {
-    max-width: 90%; // Make it more flexible for smaller screens
+    max-width: 90%;
   }
 `;
 
@@ -66,25 +65,25 @@ const MapContainer = styled.div`
 
 const LocationTitle = styled(motion.div)`
   font-size: 1.5rem;
-  font-weight: bold;
+  font-weight: 600;
   position: absolute;
   top: 10px;
   left: 10px;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 8px 12px;
-  border-radius: 5px;
-  color: white;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: #fff;
   z-index: 1;
   transition: opacity 0.3s ease-in-out;
 
   ${LocationCard}:hover & {
-    opacity: 0;
+    opacity: 0.8;
   }
 `;
 
 // Locations data
 const locations = [
-  { id: 4, name: 'Rap Clinic Smia Stabekk', lat: 59.90921845652782, lng: 10.611649286507243 },
+  { id: 1, name: "Stabekk", lat: 59.90921845652782, lng: 10.611649286507243 },
 ];
 
 type LocationType = {
@@ -95,17 +94,17 @@ type LocationType = {
 };
 
 // Google Maps API Key
-const googleMapsApiKey = 'AIzaSyAeaLX1WrWu5H5CtGmSmX718T4AaadotbA';
+const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "YOUR_API_KEY_HERE";
 
 // Reusable Map Component
 const LocationMap = ({ center }: { center: google.maps.LatLngLiteral }) => {
   return (
     <LoadScript googleMapsApiKey={googleMapsApiKey}>
       <GoogleMap
-        mapContainerStyle={{ width: '100%', height: '100%' }}
+        mapContainerStyle={{ width: "100%", height: "100%" }}
         center={center}
         zoom={13}
-        options={{ disableDefaultUI: true, gestureHandling: 'none' }} // Disable controls and panning
+        options={{ disableDefaultUI: true, gestureHandling: "none" }}
       >
         <Marker position={center} />
       </GoogleMap>

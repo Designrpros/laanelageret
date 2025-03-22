@@ -2,82 +2,82 @@
 
 import React from "react";
 import styled from "styled-components";
-import { FaHome, FaUserAlt, FaBox, FaCog } from "react-icons/fa";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import HomeIcon from "@mui/icons-material/Home";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import PersonIcon from "@mui/icons-material/Person";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import SettingsIcon from "@mui/icons-material/Settings";
 
-// Styled-components for the Admin Toolbar
-const AdminSidebar = styled.div`
-font-family: "Helvetica", Arial, sans-serif;
+const AdminSidebar = styled.div<{ isOpen: boolean }>`
+  font-family: "Helvetica", Arial, sans-serif;
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
-  width: 250px;
-  background-color: #1e1e1e; /* Darker blackish background */
-  color: white;
+  width: ${({ isOpen }) => (isOpen ? "200px" : "0")};
+  background-color: #f5f5f5;
+  color: #1a1a1a;
   display: flex;
   flex-direction: column;
-  padding-top: 30px;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3); /* Deeper shadow */
-  z-index: 1;
-  transition: all 0.3s ease; /* Smooth transition on hover */
+  padding-top: 20px;
+  box-shadow: ${({ isOpen }) => (isOpen ? "1px 0 3px rgba(0, 0, 0, 0.1)" : "none")};
+  z-index: 1000;
+  transition: width 0.3s ease;
+  overflow: hidden;
 `;
 
-const SidebarItem = styled.div.withConfig({
-  shouldForwardProp: (prop) => !['isActive'].includes(prop), // Ensure isActive doesn't get passed to the DOM
-})<{ isActive: boolean }>`
-  padding: 18px 25px;
+const SidebarItem = styled.div<{ isActive: boolean }>`
+  padding: 15px 20px;
   display: flex;
   align-items: center;
   cursor: pointer;
-  background-color: ${({ isActive }) => (isActive ? "#333" : "transparent")}; /* Active color */
-  color: ${({ isActive }) => (isActive ? "#ffdd00" : "#bdc3c7")}; /* Light grey for inactive */
-  transition: background-color 0.3s ease, transform 0.3s ease;
+  background-color: ${({ isActive }) => (isActive ? "#1a1a1a" : "transparent")};
+  color: ${({ isActive }) => (isActive ? "#fff" : "#1a1a1a")};
+  font-size: 16px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  white-space: nowrap;
 
   &:hover {
-    background-color: #333; /* Subtle dark grey hover effect */
-    transform: translateX(10px); /* Slight shift for hover */
+    background-color: #e0e0e0;
   }
 
   svg {
-    margin-right: 15px;
+    margin-right: 10px;
     font-size: 20px;
-    transition: color 0.3s ease;
-  }
-
-  &:hover svg {
-    color: white; /* Icons turn white on hover */
   }
 `;
 
-const AdminToolbar = ({ activeTab, onTabChange }: { activeTab: string, onTabChange: (tab: string) => void }) => {
+const AdminToolbar = ({
+  activeTab,
+  onTabChange,
+  isOpen,
+}: {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  isOpen: boolean;
+}) => {
   return (
-    <AdminSidebar>
-      <SidebarItem
-        isActive={activeTab === "home"}
-        onClick={() => onTabChange("home")}
-      >
-        <FaHome />
+    <AdminSidebar isOpen={isOpen}>
+      <SidebarItem isActive={activeTab === "home"} onClick={() => onTabChange("home")}>
+        {activeTab === "home" ? <HomeIcon /> : <HomeOutlinedIcon />}
         Dashboard
       </SidebarItem>
-      <SidebarItem
-        isActive={activeTab === "users"}
-        onClick={() => onTabChange("users")}
-      >
-        <FaUserAlt />
+      <SidebarItem isActive={activeTab === "users"} onClick={() => onTabChange("users")}>
+        {activeTab === "users" ? <PersonIcon /> : <PersonOutlineIcon />}
         Users
       </SidebarItem>
-      <SidebarItem
-        isActive={activeTab === "items"}
-        onClick={() => onTabChange("items")}
-      >
-        <FaBox />
+      <SidebarItem isActive={activeTab === "items"} onClick={() => onTabChange("items")}>
+        {activeTab === "items" ? <Inventory2Icon /> : <Inventory2OutlinedIcon />}
         Items
       </SidebarItem>
       <SidebarItem
         isActive={activeTab === "settings"}
         onClick={() => onTabChange("settings")}
       >
-        <FaCog />
+        {activeTab === "settings" ? <SettingsIcon /> : <SettingsOutlinedIcon />}
         Settings
       </SidebarItem>
     </AdminSidebar>

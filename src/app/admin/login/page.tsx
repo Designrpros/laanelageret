@@ -8,39 +8,37 @@ import {
   signOut,
   onAuthStateChanged 
 } from "firebase/auth";
-import { auth, googleProvider } from "../../firebase";
-import { useRouter, useSearchParams } from "next/navigation";
+import { auth, googleProvider } from "../../../firebase";
+import { useRouter } from "next/navigation";
 
-const Login = () => {
+const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const returnTo = searchParams.get("returnTo") || "/"; // Default to home
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
-        const isAdmin = await checkAdminStatus(user);
-        // Redirect after login based on returnTo and admin status
-        if (returnTo === "/admin" && !isAdmin) {
-          router.push("/"); // Non-admins go to home
-        } else {
-          router.push(returnTo);
+        const adminStatus = await checkAdminStatus(user);
+        setIsAdmin(adminStatus);
+        if (adminStatus) {
+          router.push("/admin"); // Only admins proceed
         }
       } else {
         setUser(null);
+        setIsAdmin(false);
       }
     });
     return () => unsubscribe();
-  }, [router, returnTo]);
+  }, [router]);
 
   const checkAdminStatus = async (user: any) => {
-    const adminEmails = ["admin@example.com"];
+    const adminEmails = ["admin@example.com"]; // Replace with your admin list
     return adminEmails.includes(user.email);
   };
 
@@ -74,7 +72,7 @@ const Login = () => {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      router.push("/login");
+      router.push("/admin/login");
     } catch (error) {
       setError("Error signing out");
       console.error(error);
@@ -82,19 +80,35 @@ const Login = () => {
   };
 
   if (user) {
-    return (
-      <Container>
-        <LoginForm>
-          <WelcomeMessage>Welcome, {user.email}!</WelcomeMessage>
-          <Button onClick={handleSignOut}>Sign Out</Button>
-        </LoginForm>
-      </Container>
-    );
+    if (isAdmin) {
+      return (
+        <Container>
+          <LoginForm>
+            <WelcomeMessage>Welcome, Admin {user.email}!</WelcomeMessage>
+            <Button onClick={handleSignOut}>Sign Out</Button>
+          </LoginForm>
+        </Container>
+      );
+    } else {
+      return (
+        <Container>
+          <AccessDenied>
+            <Title>Access Denied</Title>
+            <Message>
+              You do not have admin privileges. Please contact an administrator at{" "}
+              <a href="mailto:admin@example.com">admin@example.com</a> to request access.
+            </Message>
+            <Button onClick={handleSignOut}>Sign Out</Button>
+          </AccessDenied>
+        </Container>
+      );
+    }
   }
 
   return (
     <Container>
       <LoginForm onSubmit={handleEmailLogin}>
+        <Title>Admin Login</Title>
         <InputGroup>
           <label>Email</label>
           <Input 
@@ -146,24 +160,47 @@ const Login = () => {
   );
 };
 
-export default Login;
-
-// Styled components - background-color: #f3f4f6;
+// Styled components
 const Container = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  
 `;
 
-const LoginForm = styled.div`
+const LoginForm = styled.form`
   background: white;
   padding: 2.5rem;
   border-radius: 0.75rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 400px;
+`;
+
+const AccessDenied = styled.div`
+  background: white;
+  padding: 2.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+`;
+
+const Title = styled.h1`
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+`;
+
+const Message = styled.p`
+  font-size: 1rem;
+  color: #374151;
+  margin-bottom: 1.5rem;
+  a {
+    color: #3b82f6;
+    text-decoration: underline;
+  }
 `;
 
 const InputGroup = styled.div`
@@ -255,10 +292,12 @@ const WelcomeMessage = styled.div`
   text-align: center;
 `;
 
-// Add the missing ErrorMessage styled component
 const ErrorMessage = styled.div`
   color: #ef4444;
   margin-top: 1rem;
   font-size: 0.875rem;
   text-align: center;
 `;
+
+
+export default AdminLogin;

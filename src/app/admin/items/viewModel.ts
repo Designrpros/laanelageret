@@ -3,7 +3,15 @@
 
 import { useState, useEffect } from "react";
 import { db, auth } from "../../../firebase";
-import { collection, addDoc, getDocs, deleteDoc, doc, setDoc, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  setDoc,
+  onSnapshot,
+} from "firebase/firestore";
 
 interface Item {
   id: string;
@@ -15,6 +23,7 @@ interface Item {
   inStock: number;
   description?: string;
   gallery?: string[];
+  location: string;
 }
 
 interface NewItem {
@@ -22,8 +31,9 @@ interface NewItem {
   category: string;
   subcategory: string;
   image: File | null;
-  rented?: number; // Optional for form input
-  inStock?: number; // Optional for form input
+  rented?: number;
+  inStock?: number;
+  location: string;
 }
 
 interface Category {
@@ -34,7 +44,15 @@ interface Category {
 
 export const useItemsViewModel = () => {
   const [items, setItems] = useState<Item[]>([]);
-  const [newItem, setNewItem] = useState<NewItem>({ name: "", category: "", subcategory: "", image: null, rented: 0, inStock: 10 });
+  const [newItem, setNewItem] = useState<NewItem>({
+    name: "",
+    category: "",
+    subcategory: "",
+    image: null,
+    rented: 0,
+    inStock: 10,
+    location: "",
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -61,6 +79,7 @@ export const useItemsViewModel = () => {
           inStock: doc.data().inStock || 0,
           description: doc.data().description || "Ingen beskrivelse tilgjengelig.",
           gallery: doc.data().gallery || [doc.data().imageUrl],
+          location: doc.data().location || "Unknown",
         })) as Item[];
         setItems(fetchedItems);
         setIsLoading(false);
@@ -102,11 +121,17 @@ export const useItemsViewModel = () => {
     };
 
     fetchCategories();
-    return () => unsubscribeItems(); // Cleanup listener on unmount
+    return () => unsubscribeItems();
   }, []);
 
   const handleAddItem = async () => {
-    if (!newItem.name || !newItem.category || !newItem.subcategory || !newItem.image) {
+    if (
+      !newItem.name ||
+      !newItem.category ||
+      !newItem.subcategory ||
+      !newItem.image ||
+      !newItem.location
+    ) {
       setError("All fields are required");
       return;
     }
@@ -159,16 +184,24 @@ export const useItemsViewModel = () => {
         category: newItem.category,
         subcategory: newItem.subcategory,
         imageUrl: imageUrl,
-        rented: newItem.rented ?? 0, // Use form value or default
-        inStock: newItem.inStock ?? 10, // Use form value or default
+        rented: newItem.rented ?? 0,
+        inStock: newItem.inStock ?? 10,
         description: "En flott vare til utleie.",
         gallery: [imageUrl],
+        location: newItem.location,
         createdAt: new Date().toISOString(),
       };
       const docRef = await addDoc(collection(db, "items"), itemData);
 
-      // No need to manually update state here; onSnapshot will handle it
-      setNewItem({ name: "", category: "", subcategory: "", image: null, rented: 0, inStock: 10 });
+      setNewItem({
+        name: "",
+        category: "",
+        subcategory: "",
+        image: null,
+        rented: 0,
+        inStock: 10,
+        location: "",
+      });
       setIsFormOpen(false);
       console.log("Item added successfully:", { id: docRef.id, ...itemData });
     } catch (error) {
@@ -184,7 +217,6 @@ export const useItemsViewModel = () => {
     setError(null);
     try {
       await deleteDoc(doc(db, "items", id));
-      // No need to update state manually; onSnapshot will reflect deletion
     } catch (error) {
       console.error("Delete item error:", error);
       setError("Failed to delete item");
@@ -204,13 +236,26 @@ export const useItemsViewModel = () => {
     try {
       const existing = categories.find((cat) => cat.name === newCategory.name);
       if (existing) {
-        const updatedSubcategories = [...new Set([...existing.subcategories, newCategory.subcategory])];
-        await setDoc(doc(db, "categories", newCategory.name), { subcategories: updatedSubcategories }, { merge: true });
-        setCategories(categories.map((cat) =>
-          cat.name === newCategory.name ? { ...cat, subcategories: updatedSubcategories } : cat
-        ));
+        const updatedSubcategories = [
+          ...new Set([...existing.subcategories, newCategory.subcategory]),
+        ];
+        await setDoc(
+          doc(db, "categories", newCategory.name),
+          { subcategories: updatedSubcategories },
+          { merge: true }
+        );
+        setCategories(
+          categories.map((cat) =>
+            cat.name === newCategory.name
+              ? { ...cat, subcategories: updatedSubcategories }
+              : cat
+          )
+        );
       } else {
-        const newCat = { name: newCategory.name, subcategories: [newCategory.subcategory] };
+        const newCat = {
+          name: newCategory.name,
+          subcategories: [newCategory.subcategory],
+        };
         await setDoc(doc(db, "categories", newCategory.name), newCat);
         setCategories([...categories, { id: newCategory.name, ...newCat }]);
       }
@@ -225,9 +270,10 @@ export const useItemsViewModel = () => {
   };
 
   const filterCategories = ["All", ...categories.map((cat) => cat.name)];
-  const filteredItems = items.filter((item) =>
-    (selectedCategory === "All" || item.category === selectedCategory) &&
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredItems = items.filter(
+    (item) =>
+      (selectedCategory === "All" || item.category === selectedCategory) &&
+      item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return {

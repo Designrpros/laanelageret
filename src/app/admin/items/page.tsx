@@ -1,4 +1,3 @@
-// src/app/admin/items/page.tsx
 "use client";
 
 import React from "react";
@@ -6,24 +5,22 @@ import styled from "styled-components";
 import { useItemsViewModel } from "./viewModel";
 import { ItemList } from "./ItemList";
 
+// Styled Components
 const Container = styled.div`
   font-family: "Helvetica", Arial, sans-serif;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-  padding: 2vw;
-  border-radius: 12px;
-  color: #fff;
-  margin: 2vh 0;
+  background: transparent; /* No background to blend with MainContent */
+  padding: 0; /* Remove padding, let MainContent handle it */
+  color: #1a1a1a;
   width: 100%;
-  overflow-x: hidden;
   max-width: 1200px;
+  margin: 0 auto; /* Center content */
 `;
 
 const Title = styled.h1`
   font-size: clamp(24px, 4vw, 32px);
   font-weight: bold;
-  margin-bottom: 2vh;
-  color: #fff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  margin-bottom: 20px;
+  color: #1a1a1a;
 `;
 
 const Items = () => {
@@ -66,7 +63,6 @@ const Items = () => {
   return (
     <Container>
       <Title>Items Management</Title>
-
       <ItemList
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
