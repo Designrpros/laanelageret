@@ -1,4 +1,3 @@
-// src/app/info/page.tsx
 "use client";
 
 import React from "react";
@@ -6,19 +5,19 @@ import styled from "styled-components";
 import Toolbar from "../components/Toolbar";
 
 export interface InfoContent {
-    title: string;
-    description: string;
-    mission: string;
-    features: string[];
-    contact: string;
-  }
+  title: string;
+  description: string;
+  mission: string;
+  features: string[];
+  contact: string;
+}
 
 const Container = styled.div`
   font-family: "Helvetica", Arial, sans-serif;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  background: #fff; /* White background */
   min-height: 100vh;
-  padding: 4vw;
-  color: #fff;
+  padding: clamp(2rem, 6vw, 6rem); /* Generous, responsive padding */
+  color: #1a1a1a; /* Deep black for text */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -27,28 +26,35 @@ const Container = styled.div`
 `;
 
 const Title = styled.h1`
-  font-size: clamp(32px, 5vw, 48px);
-  font-weight: bold;
-  margin-bottom: 2vh;
-  color: #ffdd00;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-size: clamp(2.5rem, 6vw, 5rem); /* Large, bold title */
+  font-weight: 700;
+  letter-spacing: -0.02em; /* Slight tightening for elegance */
+  margin-bottom: clamp(2rem, 4vw, 4rem);
+  color: #1a1a1a;
+  text-transform: uppercase; /* Fashion-forward uppercase */
+  line-height: 1.1;
 `;
 
 const Section = styled.section`
-  max-width: 800px;
-  margin-bottom: 4vh;
+  max-width: 900px; /* Slightly wider for a luxurious feel */
+  margin-bottom: clamp(3rem, 5vw, 5rem);
 `;
 
 const Subtitle = styled.h2`
-  font-size: clamp(24px, 3vw, 32px);
-  color: #fff;
-  margin-bottom: 1vh;
+  font-size: clamp(1.75rem, 4vw, 3rem); /* Large subtitles */
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: clamp(1rem, 2vw, 2rem);
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
 `;
 
 const Text = styled.p`
-  font-size: clamp(16px, 2vw, 18px);
-  color: #ddd;
-  line-height: 1.6;
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem); /* Larger, readable text */
+  color: #333; /* Softer black for body text */
+  line-height: 1.5;
+  max-width: 700px;
+  margin: 0 auto;
 `;
 
 const List = styled.ul`
@@ -56,21 +62,22 @@ const List = styled.ul`
   padding: 0;
   text-align: left;
   margin: 0 auto;
-  max-width: 600px;
+  max-width: 700px;
 `;
 
 const ListItem = styled.li`
-  font-size: clamp(16px, 2vw, 18px);
-  color: #ddd;
-  margin-bottom: 1vh;
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  color: #333;
+  margin-bottom: clamp(0.75rem, 1.5vw, 1.5rem);
   position: relative;
-  padding-left: 1.5em;
+  padding-left: 2rem;
 
   &:before {
-    content: "•";
-    color: #ffdd00;
+    content: "—"; /* Em dash for a sleek, minimal bullet */
+    color: #1a1a1a;
     position: absolute;
     left: 0;
+    font-weight: 700;
   }
 `;
 
@@ -86,7 +93,7 @@ const infoContent: InfoContent = {
     "Doner utstyr du ikke trenger lenger.",
     "Enkel administrasjon for frivillige og ansatte.",
   ],
-  contact: "Kontakt oss på post@lanehuset.no eller besøk oss på hovedgaten 123.",
+  contact: "Kontakt oss på post@lanehuset.no eller besøk oss på Hovedgaten 123.",
 };
 
 const Info: React.FC = () => {
