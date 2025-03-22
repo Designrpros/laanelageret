@@ -6,22 +6,23 @@ import { motion } from "framer-motion";
 import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import { useRouter } from "next/navigation";
 
-// Styled Components - background: #fff;
+// Styled Components
 const Section = styled.section`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 3vw, 2rem); /* Responsive padding */
   font-family: "Helvetica", Arial, sans-serif;
+  background: #fff;
 `;
 
 const Title = styled(motion.h1)`
-  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-size: clamp(1.5rem, 4vw, 3.5rem); /* Smaller on mobile, larger on desktop */
   font-weight: 700;
   text-transform: uppercase;
-  margin-bottom: 3rem;
+  margin-bottom: clamp(1.5rem, 3vw, 3rem);
   text-align: center;
   color: #1a1a1a;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -29,17 +30,23 @@ const Title = styled(motion.h1)`
 
 const Grid = styled.div`
   display: flex;
-  flex-wrap: wrap;
-  gap: 2rem;
-  justify-content: center;
+  flex-direction: column; /* Stack vertically on mobile */
+  gap: clamp(1rem, 2vw, 2rem); /* Responsive gap */
+  align-items: center;
   width: 100%;
   max-width: 1200px;
+
+  @media (min-width: 768px) {
+    flex-direction: row; /* Row layout on desktop */
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 `;
 
 const LocationCard = styled(motion.div)`
   position: relative;
-  max-width: 500px;
   width: 100%;
+  max-width: 500px; /* Max width on desktop */
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
@@ -52,25 +59,26 @@ const LocationCard = styled(motion.div)`
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
   }
 
-  @media (max-width: 768px) {
-    max-width: 90%;
+  @media (max-width: 767px) {
+    max-width: 100%; /* Full width on mobile */
+    margin: 0 0.5rem; /* Small horizontal margin */
   }
 `;
 
 const MapContainer = styled.div`
   width: 100%;
-  height: 200px;
+  height: clamp(150px, 30vw, 200px); /* Smaller height on mobile */
   border-radius: 12px 12px 0 0;
 `;
 
 const LocationTitle = styled(motion.div)`
-  font-size: 1.5rem;
+  font-size: clamp(1rem, 2.5vw, 1.5rem); /* Responsive font size */
   font-weight: 600;
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 8px;
+  left: 8px;
   background: rgba(0, 0, 0, 0.7);
-  padding: 8px 16px;
+  padding: clamp(6px, 1vw, 8px) clamp(10px, 2vw, 16px);
   border-radius: 8px;
   color: #fff;
   z-index: 1;

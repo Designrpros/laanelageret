@@ -5,10 +5,10 @@ import styled from "styled-components";
 import { motion } from "framer-motion";
 import { db } from "../../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
-import MapOutlinedIcon from "@mui/icons-material/MapOutlined"; // Outlined map icon
-import MapIcon from "@mui/icons-material/Map"; // Filled map icon
-import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined"; // Outlined cart icon
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"; // Filled cart icon
+import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
+import MapIcon from "@mui/icons-material/Map";
+import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 
 interface Item {
   id: string;
@@ -269,64 +269,69 @@ const LocationDetail = ({ params }: any) => {
 // Styled Components
 const Container = styled.div`
   display: flex;
+  flex-direction: column; /* Stack vertically on mobile */
   width: 100%;
-  height: 100vh;
+  min-height: 100vh; /* Ensure full height */
   font-family: "Helvetica", Arial, sans-serif;
   background: #fff;
   position: relative;
+
+  @media (min-width: 768px) {
+    flex-direction: row; /* Side-by-side on desktop */
+  }
 `;
 
 const LeftPanel = styled.div`
   flex: 1;
-  padding: 3rem;
+  padding: clamp(1.5rem, 3vw, 3rem); /* Responsive padding */
   overflow-y: auto;
 `;
 
 const Toolbar = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: clamp(0.5rem, 1vw, 1rem);
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: clamp(1rem, 2vw, 2rem);
 `;
 
 const MapIconWrapper = styled.div`
-  font-size: 1.5rem;
+  font-size: clamp(1.2rem, 2.5vw, 1.5rem);
   color: #1a1a1a;
   cursor: pointer;
   transition: all 0.3s ease;
 `;
 
 const CartIconWrapper = styled.div`
-  font-size: 1.5rem;
+  font-size: clamp(1.2rem, 2.5vw, 1.5rem);
   color: #1a1a1a;
   cursor: pointer;
   transition: all 0.3s ease;
 `;
 
 const CartCount = styled.span`
-  font-size: 1rem;
+  font-size: clamp(0.8rem, 1.5vw, 1rem);
   color: #1a1a1a;
 `;
 
 const Title = styled(motion.h1)`
-  font-size: clamp(2rem, 5vw, 2.5rem);
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
   font-weight: 600;
   color: #1a1a1a;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: clamp(1rem, 2vw, 2rem);
 `;
 
 const FilterContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: clamp(0.5rem, 1vw, 1rem);
   justify-content: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: clamp(1.5rem, 2.5vw, 2.5rem);
 `;
 
 const FilterButton = styled.button<{ isActive: boolean }>`
-  padding: 10px 20px;
-  font-size: 16px;
+  padding: clamp(8px, 1.5vw, 10px) clamp(15px, 2vw, 20px);
+  font-size: clamp(0.9rem, 2vw, 1rem);
   background: ${({ isActive }) => (isActive ? "#000" : "#fff")};
   color: ${({ isActive }) => (isActive ? "#fff" : "#1a1a1a")};
   border: 2px solid #1a1a1a;
@@ -343,8 +348,8 @@ const FilterButton = styled.button<{ isActive: boolean }>`
 
 const ItemGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(250px, 45vw, 350px), 1fr)); /* Responsive card width */
+  gap: clamp(1rem, 2vw, 2rem);
 `;
 
 const StoreItemCard = styled(motion.div)`
@@ -352,7 +357,7 @@ const StoreItemCard = styled(motion.div)`
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  height: 300px;
+  height: clamp(250px, 40vw, 300px); /* Responsive height */
   position: relative;
   perspective: 1000px;
   cursor: pointer;
@@ -389,7 +394,7 @@ const CardBack = styled.div`
   background: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: clamp(1rem, 2vw, 1.5rem);
   overflow-y: auto;
 `;
 
@@ -400,7 +405,7 @@ const ItemImage = styled.img`
 `;
 
 const ItemContent = styled.div`
-  padding: 1rem;
+  padding: clamp(0.5rem, 1.5vw, 1rem);
   text-align: center;
   flex-grow: 1;
   display: flex;
@@ -409,35 +414,35 @@ const ItemContent = styled.div`
 `;
 
 const ItemName = styled.h3`
-  font-size: 1.5rem;
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
   color: #1a1a1a;
   margin-bottom: 0.25rem;
 `;
 
 const ItemCategory = styled.p`
-  font-size: 1rem;
+  font-size: clamp(0.8rem, 2vw, 1rem);
   color: #666;
   margin-bottom: 0.5rem;
 `;
 
 const StockBadge = styled.div`
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 8px;
+  right: 8px;
   background: #1a1a1a;
   color: #fff;
-  padding: 0.5rem 1rem;
+  padding: clamp(0.3rem, 1vw, 0.5rem) clamp(0.8rem, 1.5vw, 1rem);
   border-radius: 20px;
-  font-size: 0.9rem;
+  font-size: clamp(0.7rem, 1.5vw, 0.9rem);
   font-weight: 500;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const BorrowIconWrapper = styled.div`
   position: absolute;
-  bottom: 10px;
-  right: 10px;
-  font-size: 1.5rem;
+  bottom: 8px;
+  right: 8px;
+  font-size: clamp(1.2rem, 2.5vw, 1.5rem);
   color: #1a1a1a;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -449,7 +454,7 @@ const BackContent = styled.div`
 `;
 
 const Description = styled.p`
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 1.5vw, 0.9rem);
   margin: 0.5rem 0;
   max-height: 80px;
   overflow-y: auto;
@@ -463,8 +468,8 @@ const Gallery = styled.div`
 `;
 
 const GalleryImage = styled.img`
-  width: 80px;
-  height: 80px;
+  width: clamp(60px, 15vw, 80px);
+  height: clamp(60px, 15vw, 80px);
   object-fit: cover;
   border-radius: 4px;
 `;
@@ -473,31 +478,31 @@ const CartModal = styled(motion.div)`
   position: fixed;
   top: 0;
   right: 0;
-  width: 350px;
+  width: clamp(250px, 80vw, 350px); /* Responsive width */
   height: 100%;
   background: #fff;
   box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  padding: clamp(1.5rem, 3vw, 2rem);
   z-index: 1000;
 `;
 
 const CartTitle = styled.h2`
-  font-size: 1.75rem;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
   color: #1a1a1a;
-  margin-bottom: 1.5rem;
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
 `;
 
 const CartItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 0;
+  gap: clamp(0.5rem, 1vw, 1rem);
+  padding: clamp(0.5rem, 1.5vw, 1rem) 0;
   border-bottom: 1px solid #eee;
 `;
 
 const CartItemImage = styled.img`
-  width: 60px;
-  height: 60px;
+  width: clamp(40px, 10vw, 60px);
+  height: clamp(40px, 10vw, 60px);
   object-fit: cover;
   border-radius: 4px;
 `;
@@ -507,13 +512,13 @@ const CartItemDetails = styled.div`
 `;
 
 const CartItemName = styled.p`
-  font-size: 1rem;
+  font-size: clamp(0.9rem, 2vw, 1rem);
   color: #1a1a1a;
   font-weight: 500;
 `;
 
 const CartItemQuantity = styled.p`
-  font-size: 0.9rem;
+  font-size: clamp(0.7rem, 1.5vw, 0.9rem);
   color: #666;
 `;
 
@@ -521,10 +526,11 @@ const RemoveButton = styled.button`
   background: #ff4444;
   color: #fff;
   border: none;
-  padding: 5px 10px;
+  padding: clamp(4px, 1vw, 5px) clamp(8px, 1.5vw, 10px);
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.3s ease;
+  font-size: clamp(0.7rem, 1.5vw, 0.9rem);
 
   &:hover {
     background: #cc3333;
@@ -533,14 +539,14 @@ const RemoveButton = styled.button`
 
 const CheckoutButton = styled.button`
   width: 100%;
-  padding: 12px;
+  padding: clamp(10px, 2vw, 12px);
   background: #1a1a1a;
   color: #fff;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: clamp(0.9rem, 2vw, 1rem);
   cursor: pointer;
-  margin-top: 1.5rem;
+  margin-top: clamp(1rem, 2vw, 1.5rem);
   transition: background 0.3s ease;
 
   &:hover {
