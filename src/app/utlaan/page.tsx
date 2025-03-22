@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import { useRouter } from "next/navigation";
 
-// Styled Components
+// Styled Components - background: #fff;
 const Section = styled.section`
   min-height: 100vh;
   display: flex;
@@ -15,7 +15,6 @@ const Section = styled.section`
   justify-content: center;
   padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 3vw, 2rem); /* Responsive padding */
   font-family: "Helvetica", Arial, sans-serif;
-  background: #fff;
 `;
 
 const Title = styled(motion.h1)`

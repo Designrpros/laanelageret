@@ -1,11 +1,8 @@
-// src/components/Toolbar.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import Link from "next/link";
-import { auth } from "../../firebase";
-import { onAuthStateChanged, signOut } from "firebase/auth";
 
 interface ToolbarProps {
   activeTab: string;
@@ -16,19 +13,23 @@ const Navbar = styled.nav`
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 50;
+  z-index: 1000; /* High z-index to ensure it’s above everything */
   display: flex;
   align-items: center;
   padding: 10px;
 `;
 
-const BurgerIcon = styled.div<{ isOpen: boolean }>`
+interface BurgerIconProps {
+  $isOpen: boolean; // Use $ prefix to mark it as transient (won’t pass to DOM)
+}
+
+const BurgerIcon = styled.div<BurgerIconProps>`
   display: flex;
   flex-direction: column;
   gap: 6px;
   cursor: pointer;
   padding: 10px;
-  z-index: 51;
+  z-index: 1001; /* Even higher than Navbar to ensure topmost visibility */
 
   div {
     width: 35px;
@@ -39,20 +40,20 @@ const BurgerIcon = styled.div<{ isOpen: boolean }>`
   }
 
   div:nth-child(1) {
-    transform: ${({ isOpen }) => (isOpen ? "rotate(45deg) translateY(10px)" : "rotate(0)")};
+    transform: ${({ $isOpen }) => ($isOpen ? "rotate(45deg) translate(10px, 10px)" : "rotate(0)")};
   }
 
   div:nth-child(2) {
-    opacity: ${({ isOpen }) => (isOpen ? 0 : 1)};
+    opacity: ${({ $isOpen }) => ($isOpen ? "0" : "1")};
   }
 
   div:nth-child(3) {
-    transform: ${({ isOpen }) => (isOpen ? "rotate(-45deg) translateY(-10px)" : "rotate(0)")};
+    transform: ${({ $isOpen }) => ($isOpen ? "rotate(-45deg) translate(10px, -10px)" : "rotate(0)")};
   }
 `;
 
-const Menu = styled.div<{ isMenuOpen: boolean }>`
-  display: ${({ isMenuOpen }) => (isMenuOpen ? "flex" : "none")};
+const Menu = styled.div<{ $isMenuOpen: boolean }>`
+  display: ${({ $isMenuOpen }) => ($isMenuOpen ? "flex" : "none")};
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -63,7 +64,7 @@ const Menu = styled.div<{ isMenuOpen: boolean }>`
   width: 100%;
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(8px);
-  z-index: 50;
+  z-index: 999; /* Below BurgerIcon but above other content */
   animation: fadeIn 0.3s ease-in-out;
 
   @keyframes fadeIn {
@@ -82,7 +83,7 @@ const MenuItemsWrapper = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px; /* Add spacing between items */
+  gap: 12px;
 `;
 
 const BottomWrapper = styled.div`
@@ -90,11 +91,11 @@ const BottomWrapper = styled.div`
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 50;
+  z-index: 999;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px; /* Space between admin and login/logout */
+  gap: 12px;
 `;
 
 const MenuItem = styled.a<{ $isActive: boolean }>`
@@ -119,42 +120,8 @@ const MenuItem = styled.a<{ $isActive: boolean }>`
   }
 `;
 
-const LogoutButton = styled.button`
-  font-family: "Helvetica", Arial, sans-serif;
-  font-size: 32px;
-  font-weight: bold;
-  color: white;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-
-  &:hover {
-    color: #ffdd00;
-    transform: scale(1.1);
-  }
-
-  @media (max-width: 768px) {
-    font-size: 24px;
-  }
-`;
-
 const Toolbar: React.FC<ToolbarProps> = ({ activeTab, onTabChange }) => {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
-  const [user, setUser] = useState<any>(null);
-
-  const handleLogout = async () => {
-    await signOut(auth);
-  };
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -170,14 +137,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ activeTab, onTabChange }) => {
   return (
     <>
       <Navbar>
-        <BurgerIcon onClick={toggleMenu} isOpen={isMenuOpen}>
+        <BurgerIcon onClick={toggleMenu} $isOpen={isMenuOpen}>
           <div />
           <div />
           <div />
         </BurgerIcon>
       </Navbar>
 
-      <Menu isMenuOpen={isMenuOpen}>
+      <Menu $isMenuOpen={isMenuOpen}>
         <MenuItemsWrapper>
           <Link href="/" passHref legacyBehavior>
             <MenuItem $isActive={activeTab === "Home"} onClick={() => handleTabClick("Home")}>
@@ -197,15 +164,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ activeTab, onTabChange }) => {
         </MenuItemsWrapper>
 
         <BottomWrapper>
-          {user ? (
-            <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
-          ) : (
-            <Link href="/login" passHref legacyBehavior>
-              <MenuItem $isActive={activeTab === "login"} onClick={() => handleTabClick("login")}>
-                Login
-              </MenuItem>
-            </Link>
-          )}
+          <Link href="/login" passHref legacyBehavior>
+            <MenuItem $isActive={activeTab === "login"} onClick={() => handleTabClick("login")}>
+              Login
+            </MenuItem>
+          </Link>
           <Link href="/admin" passHref legacyBehavior>
             <MenuItem $isActive={activeTab === "admin"} onClick={() => handleTabClick("admin")}>
               Admin
