@@ -9,7 +9,6 @@ import { auth } from "../../firebase";
 import { useAdminContext } from "./AdminContext";
 
 // Ensure paths match your file structure
-const Home = dynamic(() => import("./home/page"), { ssr: false, loading: () => <div>Loading Home...</div> });
 const Users = dynamic(() => import("./users/page"), { ssr: false, loading: () => <div>Loading Users...</div> });
 const Items = dynamic(() => import("./items/page"), { ssr: false, loading: () => <div>Loading Items...</div> });
 const LostOrBroken = dynamic(() => import("./lost-or-broken/page"), { ssr: false, loading: () => <div>Loading LostOrBroken...</div> });
@@ -58,7 +57,6 @@ const AdminPanel = () => {
   console.log("AdminPanel render - activeTab:", activeTab);
   return (
     <Suspense fallback={<div>Loading page...</div>}>
-      {activeTab === "home" && <Home />}
       {activeTab === "users" && <Users />}
       {activeTab === "items" && <Items />}
       {activeTab === "lost-or-broken" && <LostOrBroken />}
