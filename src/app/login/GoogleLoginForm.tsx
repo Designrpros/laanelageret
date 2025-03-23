@@ -1,9 +1,11 @@
+// src/app/components/GoogleLoginForm.tsx (adjust path as needed)
 "use client";
 
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
-import { auth, googleProvider } from "../../firebase";
+import { doc, setDoc } from "firebase/firestore"; // Add Firestore imports
+import { auth, googleProvider, db } from "../../firebase"; // Ensure db is imported
 import { useRouter, useSearchParams } from "next/navigation";
 
 const GoogleLoginForm = () => {
@@ -14,11 +16,34 @@ const GoogleLoginForm = () => {
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/";
 
+  // Sync auth state and update Firestore
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        console.log("User signed in:", user.email);
+        console.log("User signed in:", user.email, "UID:", user.uid);
         setUser(user);
+
+        // Update Firestore with user data
+        try {
+          const userRef = doc(db, "users", user.uid);
+          await setDoc(
+            userRef,
+            {
+              email: user.email,
+              createdAt: user.metadata.creationTime || new Date().toISOString(),
+              lastLogin: new Date().toISOString(),
+              rentals: [], // Initialize empty rentals if not present
+              cart: { items: [] }, // Initialize empty cart
+            },
+            { merge: true } // Merge to avoid overwriting existing data
+          );
+          console.log("User document updated in Firestore:", user.uid);
+        } catch (err) {
+          console.error("Error updating user in Firestore:", err);
+        }
+
+        // Redirect after sign-in if needed
+        router.push(returnTo);
       } else {
         setUser(null);
       }
@@ -30,8 +55,9 @@ const GoogleLoginForm = () => {
     try {
       setLoading(true);
       setError(null);
-      await signInWithPopup(auth, googleProvider);
-      console.log("Google sign-in successful");
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log("Google sign-in successful:", result.user.email);
+      // Firestore update happens in onAuthStateChanged
     } catch (error: any) {
       console.error("Google sign-in error:", error);
       setError(getFirebaseErrorMessage(error));
@@ -91,7 +117,7 @@ const GoogleLoginForm = () => {
 
 export default GoogleLoginForm;
 
-// Styled components
+// Styled components (unchanged)
 const FormContainer = styled.div`
   background: white;
   font-family: "Helvetica", Arial, sans-serif;

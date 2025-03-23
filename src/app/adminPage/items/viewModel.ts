@@ -102,18 +102,8 @@ export const useItemsViewModel = () => {
           subcategories: doc.data().subcategories || [],
         })) as Category[];
 
-        if (fetched.length === 0) {
-          const initialCategories = [
-            { name: "Bikes", subcategories: ["Mountain", "City"] },
-            { name: "Camping", subcategories: ["Tents", "Sleeping Bags"] },
-          ];
-          for (const cat of initialCategories) {
-            await setDoc(doc(db, "categories", cat.name), cat);
-          }
-          setCategories(initialCategories.map((cat) => ({ id: cat.name, ...cat })));
-        } else {
-          setCategories(fetched);
-        }
+        setCategories(fetched);
+
       } catch (error: unknown) {
         const err = error as Error; // Type assertion
         console.error("Fetch categories error:", err.message, err);

@@ -1,89 +1,97 @@
-import React from "react";
+// src/app/adminPage/ItemGridSection.tsx
+import React, { useState } from "react";
 import styled from "styled-components";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../../firebase";
 
-const ItemGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Consistent sizing */
-  gap: clamp(10px, 2vw, 20px);
+const ItemList = styled.ul`
   width: 100%;
-  max-width: 1200px; /* Cap width for alignment */
-  justify-items: center; /* Center cards within grid cells */
-  box-sizing: border-box;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-width: 1200px;
+`;
 
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr; /* Stack on mobile */
+const Item = styled.li`
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 `;
 
-const ItemCard = styled.div`
-  background: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e0e0e0;
-  width: 100%;
-  max-width: 300px;
-  height: auto;
-  min-height: 350px;
+const ItemHeader = styled.div`
   display: flex;
-  flex-direction: column;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border-radius: 8px;
-  overflow: hidden;
-  box-sizing: border-box;
+  justify-content: space-between;
+  align-items: center;
+  padding: clamp(10px, 2vw, 15px);
+  cursor: pointer;
+  background: #f9f9f9;
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    background: #f0f0f0;
   }
+`;
 
-  @media (max-width: 768px) {
-    max-width: 100%;
-    min-height: 300px;
-  }
+const ItemName = styled.h3`
+  font-size: clamp(16px, 3vw, 18px);
+  color: #1a1a1a;
+  font-weight: 600;
+  margin: 0;
+`;
+
+const ToggleButton = styled.button`
+  background: none;
+  border: none;
+  font-size: clamp(14px, 2vw, 16px);
+  color: #555;
+  cursor: pointer;
+  padding: 0 10px;
+`;
+
+const ItemDetails = styled.div<{ isOpen: boolean }>`
+  max-height: ${({ isOpen }) => (isOpen ? "500px" : "0")};
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding: ${({ isOpen }) => (isOpen ? "clamp(10px, 2vw, 15px)" : "0 clamp(10px, 2vw, 15px)")};
 `;
 
 const Image = styled.img`
   width: 100%;
-  height: 50%;
+  max-width: 200px;
+  height: auto;
   object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: clamp(10px, 2vw, 15px);
+`;
 
-  @media (max-width: 768px) {
-    height: 40%;
+const DetailList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+`;
+
+const DetailItem = styled.li`
+  font-size: clamp(12px, 2vw, 14px);
+  color: #555;
+  padding: clamp(0.25rem, 1vw, 0.5rem) 0;
+  border-bottom: 1px solid #eee;
+
+  &:last-child {
+    border-bottom: none;
   }
-`;
-
-const ItemContent = styled.div`
-  padding: clamp(10px, 2vw, 15px);
-  text-align: center;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-`;
-
-const ItemName = styled.h3`
-  font-size: clamp(16px, 3vw, 20px);
-  color: #1a1a1a;
-  margin-bottom: 0.5rem;
-`;
-
-const ItemCategory = styled.p`
-  font-size: clamp(12px, 2vw, 16px);
-  color: #666;
-  margin-bottom: 1rem;
 `;
 
 const StockContainer = styled.div`
   display: flex;
-  justify-content: center;
   gap: 10px;
-  margin-bottom: 1rem;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 8px;
-  }
+  margin: clamp(10px, 2vw, 15px) 0;
+  flex-wrap: wrap;
 `;
 
 const StockField = styled.div`
@@ -158,6 +166,12 @@ export const ItemGridSection: React.FC<ItemGridSectionProps> = ({
   stockUpdates,
   setStockUpdates,
 }) => {
+  const [openItemId, setOpenItemId] = useState<string | null>(null);
+
+  const toggleItemDetails = (itemId: string) => {
+    setOpenItemId(openItemId === itemId ? null : itemId);
+  };
+
   const handleStockChange = (
     itemId: string,
     field: "rented" | "inStock",
@@ -190,18 +204,20 @@ export const ItemGridSection: React.FC<ItemGridSectionProps> = ({
   };
 
   return (
-    <ItemGrid>
+    <ItemList>
       {filteredItems.length > 0 ? (
         filteredItems.map((item) => (
-          <ItemCard key={item.id}>
-            <Image src={item.imageUrl} alt={item.name} />
-            <ItemContent>
-              <ItemName>{item.name}</ItemName>
-              <ItemCategory>
-                {item.category}
-                {item.subcategory ? ` - ${item.subcategory}` : ""}
-                {item.location ? ` (${item.location})` : ""}
-              </ItemCategory>
+          <Item key={item.id}>
+            <ItemHeader onClick={() => toggleItemDetails(item.id)}>
+              <ItemName>{item.name} ({item.category}{item.subcategory ? ` - ${item.subcategory}` : ""})</ItemName>
+              <ToggleButton>{openItemId === item.id ? "−" : "+"}</ToggleButton>
+            </ItemHeader>
+            <ItemDetails isOpen={openItemId === item.id}>
+              <Image src={item.imageUrl} alt={item.name} />
+              <DetailList>
+                <DetailItem>ID: {item.id}</DetailItem>
+                <DetailItem>Location: {item.location || "N/A"}</DetailItem>
+              </DetailList>
               <StockContainer>
                 <StockField>
                   <StockLabel>Utleid:</StockLabel>
@@ -223,12 +239,12 @@ export const ItemGridSection: React.FC<ItemGridSectionProps> = ({
                 </StockField>
               </StockContainer>
               <DeleteButton onClick={() => handleDeleteItem(item.id)}>Delete</DeleteButton>
-            </ItemContent>
-          </ItemCard>
+            </ItemDetails>
+          </Item>
         ))
       ) : (
         <p>No items found.</p>
       )}
-    </ItemGrid>
+    </ItemList>
   );
 };

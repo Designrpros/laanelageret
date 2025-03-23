@@ -1,3 +1,4 @@
+// src/app/adminPage/LostOrBroken.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -25,8 +26,9 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
   width: 100%;
-  max-width: 100%;
+  max-width: 1200px;
   box-sizing: border-box;
+  margin: 0 auto;
 
   @media (max-width: 768px) {
     padding: 10px;
@@ -37,7 +39,7 @@ const Title = styled.h1`
   font-size: clamp(18px, 4vw, 32px);
   font-weight: 700;
   color: #1a1a1a;
-  margin-bottom: clamp(10px, 2vw, 20px);
+  margin-bottom: clamp(10px, 2vw, 15px);
   text-align: center;
 
   @media (max-width: 480px) {
@@ -45,44 +47,98 @@ const Title = styled.h1`
   }
 `;
 
-const ReportGrid = styled.div`
+const SearchContainer = styled.div`
   width: 100%;
-  display: flex;
-  flex-wrap: wrap; /* Switch to flex for better responsiveness */
-  gap: clamp(10px, 2vw, 15px);
-  justify-content: center;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: center;
-  }
+  max-width: 600px;
+  margin-bottom: clamp(15px, 3vw, 20px);
 `;
 
-const ReportCard = styled.div`
-  background: #fff;
-  padding: clamp(10px, 2vw, 15px);
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+const SearchInput = styled.input`
   width: 100%;
-  max-width: 300px; /* Cap card width */
+  padding: clamp(8px, 1.5vw, 12px);
+  font-size: clamp(14px, 2vw, 16px);
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  outline: none;
   box-sizing: border-box;
 
-  @media (max-width: 768px) {
-    max-width: 100%; /* Full width on mobile */
+  &:focus {
+    border-color: #1a1a1a;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
   }
 `;
 
-const ReportHeader = styled.h3`
-  font-size: clamp(14px, 3vw, 18px);
-  color: #1a1a1a;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+const ReportList = styled.ul`
+  width: 100%;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 `;
 
-const ReportDetail = styled.p`
-  font-size: clamp(12px, 2vw, 16px);
+const ReportItem = styled.li`
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const ReportHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: clamp(10px, 2vw, 15px);
+  cursor: pointer;
+  background: #f9f9f9;
+
+  &:hover {
+    background: #f0f0f0;
+  }
+`;
+
+const ReportTitle = styled.h3`
+  font-size: clamp(16px, 3vw, 18px);
+  color: #1a1a1a;
+  font-weight: 600;
+  margin: 0;
+`;
+
+const ToggleButton = styled.button`
+  background: none;
+  border: none;
+  font-size: clamp(14px, 2vw, 16px);
   color: #555;
-  margin: 0.25rem 0;
+  cursor: pointer;
+  padding: 0 10px;
+`;
+
+const ReportDetails = styled.div<{ isOpen: boolean }>`
+  max-height: ${({ isOpen }) => (isOpen ? "500px" : "0")};
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding: ${({ isOpen }) => (isOpen ? "clamp(10px, 2vw, 15px)" : "0 clamp(10px, 2vw, 15px)")};
+`;
+
+const DetailList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+`;
+
+const DetailItem = styled.li`
+  font-size: clamp(12px, 2vw, 14px);
+  color: #555;
+  padding: clamp(0.25rem, 1vw, 0.5rem) 0;
+  border-bottom: 1px solid #eee;
+
+  &:last-child {
+    border-bottom: none;
+  }
 `;
 
 const StatusBadge = styled.span<{ $status: string }>`
@@ -114,6 +170,8 @@ const ResolveButton = styled.button`
 const LostOrBroken = () => {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openReportId, setOpenReportId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -150,7 +208,16 @@ const LostOrBroken = () => {
     };
   }, []);
 
-  const memoizedReports = useMemo(() => reports, [reports]);
+  const toggleReportDetails = (reportId: string) => {
+    setOpenReportId(openReportId === reportId ? null : reportId);
+  };
+
+  const filteredReports = useMemo(() => {
+    return reports.filter((report) =>
+      report.itemName.toLowerCase().includes(search.toLowerCase()) ||
+      report.email.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [reports, search]);
 
   const handleResolve = async (reportId: string) => {
     try {
@@ -168,23 +235,40 @@ const LostOrBroken = () => {
   return (
     <Container>
       <Title>Lost or Broken Items</Title>
-      {memoizedReports.length > 0 ? (
-        <ReportGrid>
-          {memoizedReports.map((report) => (
-            <ReportCard key={report.id}>
-              <ReportHeader>{report.itemName}</ReportHeader>
-              <ReportDetail>User: {report.email}</ReportDetail>
-              <ReportDetail>Qty: {report.quantity}</ReportDetail>
-              <ReportDetail>Rented: {new Date(report.dateRented).toLocaleDateString()}</ReportDetail>
-              <ReportDetail>Reported: {new Date(report.reportedAt).toLocaleDateString()}</ReportDetail>
-              <ReportDetail>Issue: {report.reportDetails}</ReportDetail>
-              <StatusBadge $status={report.status}>{report.status}</StatusBadge>
-              {report.status === "pending" && (
-                <ResolveButton onClick={() => handleResolve(report.id)}>Resolve</ResolveButton>
-              )}
-            </ReportCard>
+      <SearchContainer>
+        <SearchInput
+          type="text"
+          placeholder="Search by item name or email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </SearchContainer>
+      {filteredReports.length > 0 ? (
+        <ReportList>
+          {filteredReports.map((report) => (
+            <ReportItem key={report.id}>
+              <ReportHeader onClick={() => toggleReportDetails(report.id)}>
+                <ReportTitle>{report.itemName} ({report.email})</ReportTitle>
+                <ToggleButton>{openReportId === report.id ? "−" : "+"}</ToggleButton>
+              </ReportHeader>
+              <ReportDetails isOpen={openReportId === report.id}>
+                <DetailList>
+                  <DetailItem>ID: {report.id}</DetailItem>
+                  <DetailItem>User ID: {report.userId}</DetailItem>
+                  <DetailItem>Item ID: {report.itemId}</DetailItem>
+                  <DetailItem>Qty: {report.quantity}</DetailItem>
+                  <DetailItem>Rented: {new Date(report.dateRented).toLocaleDateString()}</DetailItem>
+                  <DetailItem>Reported: {new Date(report.reportedAt).toLocaleDateString()}</DetailItem>
+                  <DetailItem>Issue: {report.reportDetails}</DetailItem>
+                </DetailList>
+                <StatusBadge $status={report.status}>{report.status}</StatusBadge>
+                {report.status === "pending" && (
+                  <ResolveButton onClick={() => handleResolve(report.id)}>Resolve</ResolveButton>
+                )}
+              </ReportDetails>
+            </ReportItem>
           ))}
-        </ReportGrid>
+        </ReportList>
       ) : (
         <p>No reported items found.</p>
       )}
