@@ -1,11 +1,10 @@
-// src/app/utlaan/[id]/LocationDetailClient.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { db, auth } from "../../../firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import MapIcon from "@mui/icons-material/Map";
@@ -46,11 +45,26 @@ const LocationDetailClient = ({ id }: { id: string }) => {
   const router = useRouter();
 
   useEffect(() => {
+    // Load cart from localStorage initially
     const savedCart = localStorage.getItem("cart");
     if (savedCart) setCart(JSON.parse(savedCart));
 
+    // Sync with Firestore if logged in
+    let unsubscribeCart: (() => void) | undefined;
+    if (auth.currentUser) {
+      const userCartRef = doc(db, "users", auth.currentUser.uid, "cart", "current");
+      unsubscribeCart = onSnapshot(userCartRef, (doc) => {
+        if (doc.exists()) {
+          const firestoreCart = doc.data().items || [];
+          setCart(firestoreCart);
+          localStorage.setItem("cart", JSON.stringify(firestoreCart));
+        }
+      });
+    }
+
+    // Fetch items
     setIsLoading(true);
-    const unsubscribe = onSnapshot(
+    const unsubscribeItems = onSnapshot(
       collection(db, "items"),
       (snapshot) => {
         const fetchedItems = snapshot.docs.map((doc) => ({
@@ -73,11 +87,21 @@ const LocationDetailClient = ({ id }: { id: string }) => {
         setIsLoading(false);
       }
     );
-    return () => unsubscribe();
-  }, []);
+
+    // Cleanup subscriptions
+    return () => {
+      unsubscribeItems();
+      if (unsubscribeCart) unsubscribeCart();
+    };
+  }, [auth.currentUser]);
 
   useEffect(() => {
+    // Save to localStorage always and sync with Firestore if logged in
     localStorage.setItem("cart", JSON.stringify(cart));
+    if (auth.currentUser) {
+      const userCartRef = doc(db, "users", auth.currentUser.uid, "cart", "current");
+      setDoc(userCartRef, { items: cart }, { merge: true });
+    }
   }, [cart]);
 
   const locations = [
@@ -124,12 +148,10 @@ const LocationDetailClient = ({ id }: { id: string }) => {
   };
 
   const handleCheckout = () => {
-    const returnUrl = `/utlaan/${locationId}`;
-    if (!auth.currentUser) {
-      router.push(`/login?returnTo=/checkout?returnTo=${encodeURIComponent(returnUrl)}`);
-    } else {
-      router.push(`/checkout?returnTo=${encodeURIComponent(returnUrl)}`);
+    if (auth.currentUser) {
+      router.push(`/checkout?returnTo=/utlaan/${locationId}`);
     }
+    // No else clause; "Login to Checkout" button handles unauthenticated case
   };
 
   if (!selectedLocation) return <div>Location not found</div>;
@@ -190,7 +212,8 @@ const LocationDetailClient = ({ id }: { id: string }) => {
                       <ItemContent>
                         <ItemName>{item.name}</ItemName>
                         <ItemCategory>
-                          {item.category}{item.subcategory ? ` - ${item.subcategory}` : ""}
+                          {item.category}
+                          {item.subcategory ? ` - ${item.subcategory}` : ""}
                         </ItemCategory>
                       </ItemContent>
                       <StockBadge>
@@ -204,14 +227,19 @@ const LocationDetailClient = ({ id }: { id: string }) => {
                         onMouseEnter={() => setIsBorrowHovered(item.id)}
                         onMouseLeave={() => setIsBorrowHovered(null)}
                       >
-                        {isBorrowHovered === item.id ? <ShoppingCartIcon /> : <ShoppingCartOutlinedIcon />}
+                        {isBorrowHovered === item.id ? (
+                          <ShoppingCartIcon />
+                        ) : (
+                          <ShoppingCartOutlinedIcon />
+                        )}
                       </BorrowIconWrapper>
                     </CardFront>
                     <CardBack>
                       <BackContent>
                         <ItemName>{item.name}</ItemName>
                         <ItemCategory>
-                          {item.category}{item.subcategory ? ` - ${item.subcategory}` : ""}
+                          {item.category}
+                          {item.subcategory ? ` - ${item.subcategory}` : ""}
                         </ItemCategory>
                         <Description>{item.description}</Description>
                         <Gallery>
@@ -231,7 +259,12 @@ const LocationDetailClient = ({ id }: { id: string }) => {
         )}
       </LeftPanel>
       {isCartOpen && (
-        <CartModal initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ duration: 0.3 }}>
+        <CartModal
+          initial={{ x: "100%" }}
+          animate={{ x: 0 }}
+          exit={{ x: "100%" }}
+          transition={{ duration: 0.3 }}
+        >
           <CartTitle>Your Cart</CartTitle>
           {cart.length > 0 ? (
             <>
@@ -245,7 +278,13 @@ const LocationDetailClient = ({ id }: { id: string }) => {
                   <RemoveButton onClick={() => removeFromCart(item.id)}>Remove</RemoveButton>
                 </CartItem>
               ))}
-              <CheckoutButton onClick={handleCheckout}>Proceed to Checkout</CheckoutButton>
+              {auth.currentUser ? (
+                <CheckoutButton onClick={handleCheckout}>Proceed to Checkout</CheckoutButton>
+              ) : (
+                <CheckoutButton as="a" href={`/login?returnTo=/utlaan/${locationId}`}>
+                  Log in to Checkout
+                </CheckoutButton>
+              )}
             </>
           ) : (
             <p>Your cart is empty.</p>
@@ -527,7 +566,7 @@ const RemoveButton = styled.button`
   }
 `;
 
-const CheckoutButton = styled.button`
+const CheckoutButton = styled.button<{ as?: "a" }>`
   width: 100%;
   padding: clamp(10px, 2vw, 12px);
   background: #1a1a1a;
@@ -538,6 +577,8 @@ const CheckoutButton = styled.button`
   cursor: pointer;
   margin-top: clamp(1rem, 2vw, 1.5rem);
   transition: background 0.3s ease;
+  text-decoration: none;
+  text-align: center;
 
   &:hover {
     background: #333;

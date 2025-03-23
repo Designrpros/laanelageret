@@ -94,6 +94,7 @@ export default GoogleLoginForm;
 // Styled components
 const FormContainer = styled.div`
   background: white;
+  font-family: "Helvetica", Arial, sans-serif;
   padding: 2.5rem;
   border-radius: 0.75rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -112,7 +113,7 @@ const Title = styled.h1`
 const Button = styled.button`
   width: 100%;
   padding: 0.75rem;
-  background-color: #3b82f6;
+  background-color: black;
   color: white;
   border: none;
   border-radius: 0.375rem;
@@ -121,7 +122,7 @@ const Button = styled.button`
   cursor: pointer;
   transition: background-color 0.2s;
   &:hover:not(:disabled) {
-    background-color: #2563eb;
+    background-color: #333;
   }
   &:disabled {
     background-color: #9ca3af;

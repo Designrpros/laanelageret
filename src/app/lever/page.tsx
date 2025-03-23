@@ -31,24 +31,35 @@ interface UserData {
 
 const LeverContainer = styled.div`
   min-height: 100vh;
-  padding: 4rem 2rem;
-  background: #fff;
+  padding: 1rem; /* Padding for small devices */
   font-family: "Helvetica", Arial, sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+`;
+
+const ContentWrapper = styled.div`
+  background: #fff; /* White background for the content */
+  border-radius: 12px; /* Rounded corners */
+  padding: clamp(1rem, 3vw, 2rem); /* Responsive padding */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  width: 100%;
+  max-width: 800px; /* Max width for the content */
+  margin: 0 auto; /* Center the wrapper horizontally */
+  box-sizing: border-box; /* Ensure padding is included in width */
 `;
 
 const LeverTitle = styled(motion.h1)`
   font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 700;
   color: #1a1a1a;
-  margin-bottom: 2rem;
+  margin-bottom: clamp(1.5rem, 4vw, 2rem);
+  text-align: center; /* Ensure title is centered */
 `;
 
 const RentalList = styled.div`
   width: 100%;
-  max-width: 800px;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -76,14 +87,14 @@ const RentalDetails = styled.div`
 `;
 
 const RentalName = styled.p`
-  font-size: 1.25rem;
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
   color: #1a1a1a;
   font-weight: 500;
   margin-bottom: 0.25rem;
 `;
 
 const RentalInfo = styled.p`
-  font-size: 1rem;
+  font-size: clamp(1rem, 2vw, 1.25rem);
   color: #666;
   margin-bottom: 0.25rem;
 `;
@@ -95,7 +106,7 @@ const RentalTags = styled.div`
 `;
 
 const Tag = styled.span`
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
   color: #fff;
   background: #1a1a1a;
   padding: 2px 8px;
@@ -124,10 +135,11 @@ const ReportButton = styled.button`
   color: #1a1a1a;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: clamp(1rem, 2vw, 1.25rem);
   font-weight: 500;
   cursor: pointer;
-  margin: 2rem 0;
+  margin: 2rem auto; /* Center the button */
+  display: block; /* Ensure it behaves as a block element */
   transition: background 0.3s ease;
 
   &:hover {
@@ -139,15 +151,16 @@ const ReportFormContainer = styled(motion.div)`
   width: 100%;
   max-width: 800px;
   background: #fff;
-  padding: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 `;
 
 const FormTitle = styled.h2`
-  font-size: 1.5rem;
+  font-size: clamp(1.5rem, 4vw, 2rem);
   color: #1a1a1a;
   margin-bottom: 1rem;
+  text-align: center; /* Ensure form title is centered */
 `;
 
 const Form = styled.form`
@@ -163,7 +176,7 @@ const FormField = styled.div`
 `;
 
 const FormLabel = styled.label`
-  font-size: 1rem;
+  font-size: clamp(1rem, 2vw, 1.25rem);
   color: #1a1a1a;
   font-weight: 500;
 `;
@@ -172,7 +185,7 @@ const FormSelect = styled.select`
   padding: 10px;
   border: 2px solid #ccc;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: clamp(1rem, 2vw, 1.25rem);
   background: #f9f9f9;
   transition: border-color 0.3s ease;
 
@@ -186,7 +199,7 @@ const FormTextarea = styled.textarea`
   padding: 10px;
   border: 2px solid #ccc;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: clamp(1rem, 2vw, 1.25rem);
   min-height: 120px;
   background: #f9f9f9;
   resize: vertical;
@@ -204,7 +217,7 @@ const SubmitButton = styled.button`
   color: #fff;
   border: none;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: clamp(1rem, 2vw, 1.25rem);
   font-weight: 500;
   cursor: pointer;
   transition: background 0.3s ease;
@@ -313,99 +326,101 @@ const Lever = () => {
         status: "pending",
       });
 
-      alert("Report submitted successfully!");
+      alert("Rapport sendt inn!");
       setSelectedRental("");
       setReportDetails("");
       setIsFormOpen(false); // Close form after submission
     } catch (error) {
       console.error("Report submission error:", error);
-      alert("Failed to submit report. Try again.");
+      alert("Kunne ikke sende inn rapport. Prøv igjen.");
     }
   };
 
-  if (loading) return <LeverContainer><LeverTitle>Loading...</LeverTitle></LeverContainer>;
+  if (loading) return <LeverContainer><LeverTitle>Laster...</LeverTitle></LeverContainer>;
 
   return (
     <LeverContainer>
-      <LeverTitle
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1 }}
-      >
-        Lever
-      </LeverTitle>
+      <ContentWrapper>
+        <LeverTitle
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+        >
+          Lever
+        </LeverTitle>
 
-      {userRentals.length > 0 ? (
-        <RentalList>
-          {userRentals.map((rental, idx) => {
-            const item = items.find((i) => i.id === rental.itemId);
-            return (
-              <RentalItem key={idx}>
-                {item && <RentalImage src={item.imageUrl} alt={item.name} />}
-                <RentalDetails>
-                  <RentalName>{rental.name}</RentalName>
-                  {item && (
-                    <RentalTags>
-                      <Tag>{item.category}</Tag>
-                      {item.subcategory && <Tag>{item.subcategory}</Tag>}
-                    </RentalTags>
-                  )}
-                  <RentalInfo>
-                    Qty: {rental.quantity} - Rented on {new Date(rental.date).toLocaleDateString()}
-                  </RentalInfo>
-                </RentalDetails>
-                <ReturnButton onClick={() => handleReturn(rental)}>Return</ReturnButton>
-              </RentalItem>
-            );
-          })}
-        </RentalList>
-      ) : (
-        <p>You have no active rentals.</p>
-      )}
-
-      <ReportButton onClick={() => setIsFormOpen(!isFormOpen)}>
-        {isFormOpen ? "Cancel Report" : "Report Lost or Broken Item"}
-      </ReportButton>
-
-      <AnimatePresence>
-        {isFormOpen && (
-          <ReportFormContainer
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <FormTitle>Report Lost or Broken Item</FormTitle>
-            <Form onSubmit={handleReportSubmit}>
-              <FormField>
-                <FormLabel>Select Rental:</FormLabel>
-                <FormSelect
-                  value={selectedRental}
-                  onChange={(e) => setSelectedRental(e.target.value)}
-                  required
-                >
-                  <option value="">-- Select an item --</option>
-                  {userRentals.map((rental) => (
-                    <option key={`${rental.itemId}-${rental.date}`} value={`${rental.itemId}-${rental.date}`}>
-                      {rental.name} (Qty: {rental.quantity}, Rented: {new Date(rental.date).toLocaleDateString()})
-                    </option>
-                  ))}
-                </FormSelect>
-              </FormField>
-              <FormField>
-                <FormLabel>Details:</FormLabel>
-                <FormTextarea
-                  value={reportDetails}
-                  onChange={(e) => setReportDetails(e.target.value)}
-                  placeholder="Describe the issue (e.g., item lost, damaged part)"
-                  required
-                />
-              </FormField>
-              <SubmitButton type="submit">Submit Report</SubmitButton>
-            </Form>
-          </ReportFormContainer>
+        {userRentals.length > 0 ? (
+          <RentalList>
+            {userRentals.map((rental, idx) => {
+              const item = items.find((i) => i.id === rental.itemId);
+              return (
+                <RentalItem key={idx}>
+                  {item && <RentalImage src={item.imageUrl} alt={item.name} />}
+                  <RentalDetails>
+                    <RentalName>{rental.name}</RentalName>
+                    {item && (
+                      <RentalTags>
+                        <Tag>{item.category}</Tag>
+                        {item.subcategory && <Tag>{item.subcategory}</Tag>}
+                      </RentalTags>
+                    )}
+                    <RentalInfo>
+                      Antall: {rental.quantity} - Utlånt {new Date(rental.date).toLocaleDateString()}
+                    </RentalInfo>
+                  </RentalDetails>
+                  <ReturnButton onClick={() => handleReturn(rental)}>Lever</ReturnButton>
+                </RentalItem>
+              );
+            })}
+          </RentalList>
+        ) : (
+          <p>Du har ingen aktive utlån.</p>
         )}
-      </AnimatePresence>
+
+        <ReportButton onClick={() => setIsFormOpen(!isFormOpen)}>
+          {isFormOpen ? "Avbryt" : "Rapporter mistet eller ødelagt gjenstand"}
+        </ReportButton>
+
+        <AnimatePresence>
+          {isFormOpen && (
+            <ReportFormContainer
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <FormTitle>Rapporter mistet eller ødelagt gjenstand</FormTitle>
+              <Form onSubmit={handleReportSubmit}>
+                <FormField>
+                  <FormLabel>Velg utlån:</FormLabel>
+                  <FormSelect
+                    value={selectedRental}
+                    onChange={(e) => setSelectedRental(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Velg en gjenstand --</option>
+                    {userRentals.map((rental) => (
+                      <option key={`${rental.itemId}-${rental.date}`} value={`${rental.itemId}-${rental.date}`}>
+                        {rental.name} (Antall: {rental.quantity}, Utlånt: {new Date(rental.date).toLocaleDateString()})
+                      </option>
+                    ))}
+                  </FormSelect>
+                </FormField>
+                <FormField>
+                  <FormLabel>Detaljer:</FormLabel>
+                  <FormTextarea
+                    value={reportDetails}
+                    onChange={(e) => setReportDetails(e.target.value)}
+                    placeholder="Beskriv problemet (f.eks. gjenstand mistet, skadet del)"
+                    required
+                  />
+                </FormField>
+                <SubmitButton type="submit">Send inn rapport</SubmitButton>
+              </Form>
+            </ReportFormContainer>
+          )}
+        </AnimatePresence>
+      </ContentWrapper>
     </LeverContainer>
   );
 };

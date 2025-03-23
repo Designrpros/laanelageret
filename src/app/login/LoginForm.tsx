@@ -179,7 +179,7 @@ const Input = styled.input`
 const Button = styled.button`
   width: 100%;
   padding: 0.75rem;
-  background-color: #3b82f6;
+  background-color: #333;
   color: white;
   border: none;
   border-radius: 0.375rem;
@@ -188,7 +188,7 @@ const Button = styled.button`
   cursor: pointer;
   transition: background-color 0.2s;
   &:hover {
-    background-color: #2563eb;
+    background-color: #333;
   }
 `;
 

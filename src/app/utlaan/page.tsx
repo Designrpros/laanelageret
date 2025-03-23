@@ -6,23 +6,33 @@ import { motion } from "framer-motion";
 import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import { useRouter } from "next/navigation";
 
-// Styled Components - background: #fff;
+// Styled Components
 const Section = styled.section`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #fff;
   align-items: center;
   justify-content: center;
-  padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 3vw, 2rem); /* Responsive padding */
+  padding: clamp(1rem, 3vw, 2rem); /* Responsive padding */
   font-family: "Helvetica", Arial, sans-serif;
 `;
 
+const ContentWrapper = styled.div`
+  background: #fff; /* White background for the title and cards */
+  border-radius: 12px; /* Rounded corners */
+  padding: clamp(1rem, 3vw, 2rem); /* Responsive padding */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  width: 100%;
+  max-width: 800px; /* Max width for the content */
+  margin: 0 auto; /* Center the wrapper horizontally */
+  box-sizing: border-box; /* Ensure padding is included in width */
+`;
+
 const Title = styled(motion.h1)`
-  font-size: clamp(1.5rem, 4vw, 3.5rem); /* Smaller on mobile, larger on desktop */
+  font-size: clamp(1.5rem, 4vw, 3rem); /* Responsive title size */
   font-weight: 700;
   text-transform: uppercase;
-  margin-bottom: clamp(1.5rem, 3vw, 3rem);
+  margin-bottom: clamp(1.5rem, 3vw, 2rem);
   text-align: center;
   color: #1a1a1a;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -34,7 +44,6 @@ const Grid = styled.div`
   gap: clamp(1rem, 2vw, 2rem); /* Responsive gap */
   align-items: center;
   width: 100%;
-  max-width: 1200px;
 
   @media (min-width: 768px) {
     flex-direction: row; /* Row layout on desktop */
@@ -50,7 +59,7 @@ const LocationCard = styled(motion.div)`
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  background: #fff;
+  background: #fff; /* Keep the white background for the card */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 
@@ -129,29 +138,31 @@ export default function Utlån() {
 
   return (
     <Section>
-      <Title
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1 }}
-      >
-        Utlån Lokasjoner
-      </Title>
-      <Grid>
-        {locations.map((location, index) => (
-          <LocationCard
-            key={location.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: index * 0.2 }}
-            onClick={() => handleCardClick(location.id)}
-          >
-            <MapContainer>
-              <LocationMap center={{ lat: location.lat, lng: location.lng }} />
-            </MapContainer>
-            <LocationTitle>{location.name}</LocationTitle>
-          </LocationCard>
-        ))}
-      </Grid>
+      <ContentWrapper>
+        <Title
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+        >
+          Utlån Lokasjoner
+        </Title>
+        <Grid>
+          {locations.map((location, index) => (
+            <LocationCard
+              key={location.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: index * 0.2 }}
+              onClick={() => handleCardClick(location.id)}
+            >
+              <MapContainer>
+                <LocationMap center={{ lat: location.lat, lng: location.lng }} />
+              </MapContainer>
+              <LocationTitle>{location.name}</LocationTitle>
+            </LocationCard>
+          ))}
+        </Grid>
+      </ContentWrapper>
     </Section>
   );
 }
