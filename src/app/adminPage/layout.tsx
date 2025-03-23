@@ -1,7 +1,6 @@
-// src/app/admin/layout.tsx
 "use client";
 
-import React, { ReactNode, useState, useEffect } from "react";
+import React, { ReactNode, useState } from "react";
 import styled from "styled-components";
 import AdminToolbar from "./components/AdminToolbar";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -16,10 +15,9 @@ const LayoutWrapper = styled.div`
 
 const MainContent = styled.div<{ $sidebarOpen: boolean }>`
   margin-left: ${({ $sidebarOpen }) => ($sidebarOpen ? "200px" : "24px")};
-  padding: 20px;
   flex-grow: 1;
   width: ${({ $sidebarOpen }) => ($sidebarOpen ? "calc(100% - 200px)" : "calc(100% - 24px)")};
-  transition: margin-left 0.2s ease-out, width 0.2s ease-out;
+  transition: margin-left 0.2s ease-out;
 `;
 
 const ToggleButton = styled.button<{ $isOpen: boolean }>`
@@ -48,26 +46,18 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+export default function Layout({ children }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
-  useEffect(() => {
-    console.log("Layout mounted");
-  }, []);
-
-  console.log("Layout render");
-
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   return (
     <AdminProvider>
       <LayoutWrapper>
-        <AdminToolbar isOpen={isSidebarOpen} />
-        <ToggleButton $isOpen={isSidebarOpen} onClick={() => setIsSidebarOpen((prev) => !prev)}>
+        <AdminToolbar />
+        <ToggleButton $isOpen={isSidebarOpen} onClick={toggleSidebar}>
           {isSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
         </ToggleButton>
         <MainContent $sidebarOpen={isSidebarOpen}>{children}</MainContent>
       </LayoutWrapper>
     </AdminProvider>
   );
-};
-
-export default Layout;
+}

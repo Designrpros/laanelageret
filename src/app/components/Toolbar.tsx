@@ -147,15 +147,40 @@ const Toolbar: React.FC<ToolbarProps> = ({ activeTab, onTabChange }) => {
 
       <Menu $isMenuOpen={isMenuOpen}>
         <MenuItemsWrapper>
-          <Link href="/" passHref legacyBehavior><MenuItem $isActive={activeTab === "Home"} onClick={() => handleTabClick("Home")}>Home</MenuItem></Link>
-          <Link href="/utlaan" passHref legacyBehavior><MenuItem $isActive={activeTab === "utlaan"} onClick={() => handleTabClick("utlaan")}>Utlån</MenuItem></Link>
-          <Link href="/lever" passHref legacyBehavior><MenuItem $isActive={activeTab === "lever"} onClick={() => handleTabClick("lever")}>Lever</MenuItem></Link>
-          <Link href="/info" passHref legacyBehavior><MenuItem $isActive={activeTab === "info"} onClick={() => handleTabClick("info")}>Info</MenuItem></Link>
+          <Link href="/" passHref legacyBehavior>
+            <MenuItem $isActive={activeTab === "Home"} onClick={() => handleTabClick("Home")}>
+              Home
+            </MenuItem>
+          </Link>
+          <Link href="/utlaan" passHref legacyBehavior>
+            <MenuItem $isActive={activeTab === "utlaan"} onClick={() => handleTabClick("utlaan")}>
+              Utlån
+            </MenuItem>
+          </Link>
+          <Link href="/lever" passHref legacyBehavior>
+            <MenuItem $isActive={activeTab === "lever"} onClick={() => handleTabClick("lever")}>
+              Lever
+            </MenuItem>
+          </Link>
+          <Link href="/info" passHref legacyBehavior>
+            <MenuItem $isActive={activeTab === "info"} onClick={() => handleTabClick("info")}>
+              Info
+            </MenuItem>
+          </Link>
         </MenuItemsWrapper>
 
         <BottomWrapper>
-          <Link href="/login" passHref legacyBehavior><MenuItem $isActive={activeTab === "login"} onClick={() => handleTabClick("login")}>Login</MenuItem></Link>
-          <Link href="/admin" passHref legacyBehavior><MenuItem $isActive={activeTab === "admin"} onClick={() => handleTabClick("admin")}>Admin</MenuItem></Link>
+          <Link href="/login" passHref legacyBehavior>
+            <MenuItem $isActive={activeTab === "login"} onClick={() => handleTabClick("login")}>
+              Login
+            </MenuItem>
+          </Link>
+          {/* Moved comment outside Link */}
+          <Link href="/adminPage" passHref legacyBehavior>
+            <MenuItem $isActive={activeTab === "admin"} onClick={() => handleTabClick("admin")}>
+              Admin
+            </MenuItem>
+          </Link> {/* Changed from /admin to /adminPage */}
         </BottomWrapper>
       </Menu>
     </>

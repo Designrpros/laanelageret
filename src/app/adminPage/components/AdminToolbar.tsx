@@ -1,7 +1,6 @@
-// src/app/admin/components/AdminToolbar.tsx
 "use client";
 
-import React, { memo, useEffect } from "react";
+import React from "react";
 import styled from "styled-components";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import HomeIcon from "@mui/icons-material/Home";
@@ -28,6 +27,7 @@ const AdminSidebar = styled.div<{ $isOpen: boolean }>`
   z-index: 1000;
   transform: ${({ $isOpen }) => ($isOpen ? "translateX(0)" : "translateX(-100%)")};
   transition: transform 0.2s ease-out;
+  will-change: transform;
 `;
 
 const SidebarItem = styled.div<{ $isActive: boolean }>`
@@ -50,44 +50,27 @@ const SidebarItem = styled.div<{ $isActive: boolean }>`
   }
 `;
 
-const MemoizedSidebarItem = memo(SidebarItem);
-
-interface AdminToolbarProps {
-  isOpen: boolean;
-}
-
-const AdminToolbar = memo(({ isOpen }: AdminToolbarProps) => {
-  const { activeTab, onTabChange } = useAdminContext();
-
-  useEffect(() => {
-    console.log("AdminToolbar mounted - activeTab:", activeTab, "onTabChange:", typeof onTabChange);
-  }, []);
-
-  console.log("AdminToolbar render - activeTab:", activeTab, "onTabChange:", typeof onTabChange);
+export default function AdminToolbar() {
+  const { isSidebarOpen, activeTab, onTabChange } = useAdminContext();
 
   return (
-    <AdminSidebar $isOpen={isOpen}>
-      <MemoizedSidebarItem $isActive={activeTab === "home"} onClick={() => onTabChange("home")}>
+    <AdminSidebar $isOpen={isSidebarOpen}>
+      <SidebarItem $isActive={activeTab === "home"} onClick={() => onTabChange("home")}>
         {activeTab === "home" ? <HomeIcon /> : <HomeOutlinedIcon />}
         Dashboard
-      </MemoizedSidebarItem>
-      <MemoizedSidebarItem $isActive={activeTab === "users"} onClick={() => onTabChange("users")}>
+      </SidebarItem>
+      <SidebarItem $isActive={activeTab === "users"} onClick={() => onTabChange("users")}>
         {activeTab === "users" ? <PersonIcon /> : <PersonOutlineIcon />}
         Users
-      </MemoizedSidebarItem>
-      <MemoizedSidebarItem $isActive={activeTab === "items"} onClick={() => onTabChange("items")}>
+      </SidebarItem>
+      <SidebarItem $isActive={activeTab === "items"} onClick={() => onTabChange("items")}>
         {activeTab === "items" ? <Inventory2Icon /> : <Inventory2OutlinedIcon />}
         Items
-      </MemoizedSidebarItem>
-      <MemoizedSidebarItem
-        $isActive={activeTab === "lost-or-broken"}
-        onClick={() => onTabChange("lost-or-broken")}
-      >
+      </SidebarItem>
+      <SidebarItem $isActive={activeTab === "lost-or-broken"} onClick={() => onTabChange("lost-or-broken")}>
         {activeTab === "lost-or-broken" ? <ReportProblemIcon /> : <ReportProblemOutlinedIcon />}
         Lost/Broken
-      </MemoizedSidebarItem>
+      </SidebarItem>
     </AdminSidebar>
   );
-});
-
-export default AdminToolbar;
+}

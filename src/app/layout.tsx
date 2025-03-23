@@ -1,3 +1,4 @@
+// src/app/layout.tsx
 "use client";
 
 import React from "react";
@@ -32,12 +33,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
+  const isAdminRoute = pathname?.startsWith("/adminPage");
+
   const activeTab = pathname === "/" ? "Home" :
                     pathname.startsWith("/utlaan") ? "utlaan" :
                     pathname === "/info" ? "info" :
                     pathname === "/lever" ? "lever" :
                     pathname === "/login" ? "login" :
-                    pathname.startsWith("/admin") ? "admin" : "Home";
+                    isAdminRoute ? "admin" : "Home";
 
   const handleTabChange = (tab: string) => {
     router.push(
@@ -45,7 +48,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       tab === "utlaan" ? "/utlaan/1" :
       tab === "lever" ? "/lever" :
       tab === "login" ? "/login" :
-      tab === "admin" ? "/admin" :
+      tab === "admin" ? "/adminPage" :
       `/${tab.toLowerCase()}`
     );
   };
@@ -55,9 +58,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <head />
       <body>
         <GlobalStyle />
-        <HeroSection>
-          <BackgroundImage src="/RentalBackground.jpg" alt="Rental Background" />
-        </HeroSection>
+        {!isAdminRoute && (
+          <HeroSection>
+            <BackgroundImage src="/RentalBackground.jpg" alt="Rental Background" />
+          </HeroSection>
+        )}
         <Toolbar activeTab={activeTab} onTabChange={handleTabChange} />
         {children}
       </body>

@@ -1,4 +1,3 @@
-// src/app/admin/home/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -19,49 +18,37 @@ const Home = () => {
     let unsubscribeReports: () => void;
 
     try {
-      unsubscribeItems = onSnapshot(
-        collection(db, "items"),
-        (snapshot) => {
-          console.log("Items snapshot:", snapshot.docs.length);
-          setTotalItems(snapshot.size);
-          setLoading(false);
-        },
-        (err) => {
-          console.error("Items listener error:", err);
-          setError("Failed to load items: " + err.message);
-          setLoading(false);
-        }
-      );
+      unsubscribeItems = onSnapshot(collection(db, "items"), (snapshot) => {
+        console.log("Items snapshot:", snapshot.docs.length);
+        setTotalItems(snapshot.size);
+        setLoading(false);
+      }, (err) => {
+        console.error("Items listener error:", err);
+        setError("Failed to load items: " + err.message);
+        setLoading(false);
+      });
 
-      unsubscribeUsers = onSnapshot(
-        collection(db, "users"),
-        (snapshot) => {
-          const rentals = snapshot.docs.flatMap((doc) => doc.data().rentals || []);
-          console.log("Users snapshot - rentals:", rentals.length);
-          setActiveLoans(rentals.length);
-          setLoading(false);
-        },
-        (err) => {
-          console.error("Users listener error:", err);
-          setError("Failed to load users: " + err.message);
-          setLoading(false);
-        }
-      );
+      unsubscribeUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+        const rentals = snapshot.docs.flatMap((doc) => doc.data().rentals || []);
+        console.log("Users snapshot - rentals:", rentals.length);
+        setActiveLoans(rentals.length);
+        setLoading(false);
+      }, (err) => {
+        console.error("Users listener error:", err);
+        setError("Failed to load users: " + err.message);
+        setLoading(false);
+      });
 
-      unsubscribeReports = onSnapshot(
-        collection(db, "reports"),
-        (snapshot) => {
-          const pending = snapshot.docs.filter((doc) => doc.data().status === "pending").length;
-          console.log("Reports snapshot - pending:", pending);
-          setPendingReports(pending);
-          setLoading(false);
-        },
-        (err) => {
-          console.error("Reports listener error:", err);
-          setError("Failed to load reports: " + err.message);
-          setLoading(false);
-        }
-      );
+      unsubscribeReports = onSnapshot(collection(db, "reports"), (snapshot) => {
+        const pending = snapshot.docs.filter((doc) => doc.data().status === "pending").length;
+        console.log("Reports snapshot - pending:", pending);
+        setPendingReports(pending);
+        setLoading(false);
+      }, (err) => {
+        console.error("Reports listener error:", err);
+        setError("Failed to load reports: " + err.message);
+        setLoading(false);
+      });
     } catch (err) {
       console.error("Setup error:", err);
       setError("Error setting up listeners: " + (err as Error).message);
