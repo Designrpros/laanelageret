@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { db, auth } from "../../firebase";
 import { doc, getDoc, updateDoc, setDoc, collection, onSnapshot } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import { ReportForm } from "./ReportForm"; // Adjust path as needed
 
 interface Rental {
   itemId: string;
@@ -31,7 +32,7 @@ interface UserData {
 
 const LeverContainer = styled.div`
   min-height: 100vh;
-  padding: 1rem; /* Padding for small devices */
+  padding: 1rem;
   font-family: "Helvetica", Arial, sans-serif;
   display: flex;
   flex-direction: column;
@@ -40,14 +41,14 @@ const LeverContainer = styled.div`
 `;
 
 const ContentWrapper = styled.div`
-  background: #fff; /* White background for the content */
-  border-radius: 12px; /* Rounded corners */
-  padding: clamp(1rem, 3vw, 2rem); /* Responsive padding */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  background: #fff;
+  border-radius: 12px;
+  padding: clamp(1rem, 3vw, 2rem);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 800px; /* Max width for the content */
-  margin: 0 auto; /* Center the wrapper horizontally */
-  box-sizing: border-box; /* Ensure padding is included in width */
+  max-width: 800px;
+  margin: 0 auto;
+  box-sizing: border-box;
 `;
 
 const LeverTitle = styled(motion.h1)`
@@ -55,7 +56,7 @@ const LeverTitle = styled(motion.h1)`
   font-weight: 700;
   color: #1a1a1a;
   margin-bottom: clamp(1.5rem, 4vw, 2rem);
-  text-align: center; /* Ensure title is centered */
+  text-align: center;
 `;
 
 const RentalList = styled.div`
@@ -138,92 +139,12 @@ const ReportButton = styled.button`
   font-size: clamp(1rem, 2vw, 1.25rem);
   font-weight: 500;
   cursor: pointer;
-  margin: 2rem auto; /* Center the button */
-  display: block; /* Ensure it behaves as a block element */
+  margin: 2rem auto;
+  display: block;
   transition: background 0.3s ease;
 
   &:hover {
     background: #e6c700;
-  }
-`;
-
-const ReportFormContainer = styled(motion.div)`
-  width: 100%;
-  max-width: 800px;
-  background: #fff;
-  padding: clamp(1rem, 3vw, 1.5rem);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-`;
-
-const FormTitle = styled.h2`
-  font-size: clamp(1.5rem, 4vw, 2rem);
-  color: #1a1a1a;
-  margin-bottom: 1rem;
-  text-align: center; /* Ensure form title is centered */
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-`;
-
-const FormField = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-`;
-
-const FormLabel = styled.label`
-  font-size: clamp(1rem, 2vw, 1.25rem);
-  color: #1a1a1a;
-  font-weight: 500;
-`;
-
-const FormSelect = styled.select`
-  padding: 10px;
-  border: 2px solid #ccc;
-  border-radius: 6px;
-  font-size: clamp(1rem, 2vw, 1.25rem);
-  background: #f9f9f9;
-  transition: border-color 0.3s ease;
-
-  &:focus {
-    border-color: #1a1a1a;
-    outline: none;
-  }
-`;
-
-const FormTextarea = styled.textarea`
-  padding: 10px;
-  border: 2px solid #ccc;
-  border-radius: 6px;
-  font-size: clamp(1rem, 2vw, 1.25rem);
-  min-height: 120px;
-  background: #f9f9f9;
-  resize: vertical;
-  transition: border-color 0.3s ease;
-
-  &:focus {
-    border-color: #1a1a1a;
-    outline: none;
-  }
-`;
-
-const SubmitButton = styled.button`
-  padding: 12px;
-  background: #ff4444;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: clamp(1rem, 2vw, 1.25rem);
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.3s ease;
-
-  &:hover {
-    background: #cc3333;
   }
 `;
 
@@ -329,7 +250,7 @@ const Lever = () => {
       alert("Rapport sendt inn!");
       setSelectedRental("");
       setReportDetails("");
-      setIsFormOpen(false); // Close form after submission
+      setIsFormOpen(false);
     } catch (error) {
       console.error("Report submission error:", error);
       alert("Kunne ikke sende inn rapport. Prøv igjen.");
@@ -383,41 +304,14 @@ const Lever = () => {
 
         <AnimatePresence>
           {isFormOpen && (
-            <ReportFormContainer
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <FormTitle>Rapporter mistet eller ødelagt gjenstand</FormTitle>
-              <Form onSubmit={handleReportSubmit}>
-                <FormField>
-                  <FormLabel>Velg utlån:</FormLabel>
-                  <FormSelect
-                    value={selectedRental}
-                    onChange={(e) => setSelectedRental(e.target.value)}
-                    required
-                  >
-                    <option value="">-- Velg en gjenstand --</option>
-                    {userRentals.map((rental) => (
-                      <option key={`${rental.itemId}-${rental.date}`} value={`${rental.itemId}-${rental.date}`}>
-                        {rental.name} (Antall: {rental.quantity}, Utlånt: {new Date(rental.date).toLocaleDateString()})
-                      </option>
-                    ))}
-                  </FormSelect>
-                </FormField>
-                <FormField>
-                  <FormLabel>Detaljer:</FormLabel>
-                  <FormTextarea
-                    value={reportDetails}
-                    onChange={(e) => setReportDetails(e.target.value)}
-                    placeholder="Beskriv problemet (f.eks. gjenstand mistet, skadet del)"
-                    required
-                  />
-                </FormField>
-                <SubmitButton type="submit">Send inn rapport</SubmitButton>
-              </Form>
-            </ReportFormContainer>
+            <ReportForm
+              userRentals={userRentals}
+              selectedRental={selectedRental}
+              setSelectedRental={setSelectedRental}
+              reportDetails={reportDetails}
+              setReportDetails={setReportDetails}
+              handleReportSubmit={handleReportSubmit}
+            />
           )}
         </AnimatePresence>
       </ContentWrapper>

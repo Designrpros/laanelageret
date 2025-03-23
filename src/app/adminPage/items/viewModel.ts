@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db, auth } from "../../../firebase";
+import { db, auth, storage } from "../../../firebase"; // Ensure this points to the correct firebase.ts
 import {
   collection,
   addDoc,
@@ -12,6 +12,7 @@ import {
   setDoc,
   onSnapshot,
 } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 interface Item {
   id: string;
@@ -84,9 +85,9 @@ export const useItemsViewModel = () => {
         setItems(fetchedItems);
         setIsLoading(false);
       },
-      (error) => {
-        console.error("Fetch items error:", error);
-        setError("Failed to fetch items");
+      (error: Error) => {
+        console.error("Fetch items error:", error.message, error);
+        setError("Failed to fetch items: " + error.message);
         setIsLoading(false);
       }
     );
@@ -97,7 +98,8 @@ export const useItemsViewModel = () => {
         const categoriesCollection = await getDocs(collection(db, "categories"));
         const fetched = categoriesCollection.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data(),
+          name: doc.data().name,
+          subcategories: doc.data().subcategories || [],
         })) as Category[];
 
         if (fetched.length === 0) {
@@ -112,9 +114,10 @@ export const useItemsViewModel = () => {
         } else {
           setCategories(fetched);
         }
-      } catch (error) {
-        console.error("Fetch categories error:", error);
-        setError("Failed to fetch categories");
+      } catch (error: unknown) {
+        const err = error as Error; // Type assertion
+        console.error("Fetch categories error:", err.message, err);
+        setError("Failed to fetch categories: " + err.message);
       } finally {
         setIsLoading(false);
       }
@@ -132,12 +135,12 @@ export const useItemsViewModel = () => {
       !newItem.image ||
       !newItem.location
     ) {
-      setError("All fields are required");
+      setError("All fields (Name, Category, Subcategory, Image, Location) are required");
       return;
     }
 
     if (newItem.image.size > 5 * 1024 * 1024) {
-      setError("File size must be less than 5MB");
+      setError("Image size must be less than 5MB");
       return;
     }
     if (!newItem.image.type.startsWith("image/")) {
@@ -152,38 +155,15 @@ export const useItemsViewModel = () => {
       const user = auth.currentUser;
       if (!user) throw new Error("Please sign in first");
 
-      const token = await user.getIdToken(true);
-      const formData = new FormData();
-      formData.append("file", newItem.image);
-
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const text = await response.text();
-        console.error("Raw response:", text);
-        throw new Error(`Upload failed: ${response.status} - ${text}`);
-      }
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType?.includes("application/json")) {
-        const text = await response.text();
-        throw new Error(`Unexpected response format: ${contentType || "null"} - ${text}`);
-      }
-
-      const result = await response.json();
-      const imageUrl = result.url;
+      const imageRef = ref(storage, `items/${newItem.image.name}`);
+      await uploadBytes(imageRef, newItem.image);
+      const imageUrl = await getDownloadURL(imageRef);
 
       const itemData = {
         name: newItem.name,
         category: newItem.category,
         subcategory: newItem.subcategory,
-        imageUrl: imageUrl,
+        imageUrl,
         rented: newItem.rented ?? 0,
         inStock: newItem.inStock ?? 10,
         description: "En flott vare til utleie.",
@@ -193,6 +173,7 @@ export const useItemsViewModel = () => {
       };
       const docRef = await addDoc(collection(db, "items"), itemData);
 
+      setItems([...items, { id: docRef.id, ...itemData }]);
       setNewItem({
         name: "",
         category: "",
@@ -204,9 +185,10 @@ export const useItemsViewModel = () => {
       });
       setIsFormOpen(false);
       console.log("Item added successfully:", { id: docRef.id, ...itemData });
-    } catch (error) {
-      console.error("Upload error:", error);
-      setError(error instanceof Error ? error.message : "Failed to add item");
+    } catch (error: unknown) {
+      const err = error as Error; // Type assertion
+      console.error("Add item error:", err.message, err);
+      setError(err.message || "Failed to add item");
     } finally {
       setIsLoading(false);
     }
@@ -217,9 +199,10 @@ export const useItemsViewModel = () => {
     setError(null);
     try {
       await deleteDoc(doc(db, "items", id));
-    } catch (error) {
-      console.error("Delete item error:", error);
-      setError("Failed to delete item");
+    } catch (error: unknown) {
+      const err = error as Error; // Type assertion
+      console.error("Delete item error:", err.message, err);
+      setError("Failed to delete item: " + err.message);
     } finally {
       setIsLoading(false);
     }
@@ -239,16 +222,15 @@ export const useItemsViewModel = () => {
         const updatedSubcategories = [
           ...new Set([...existing.subcategories, newCategory.subcategory]),
         ];
+        console.log("Updating existing category:", existing.id, updatedSubcategories);
         await setDoc(
-          doc(db, "categories", newCategory.name),
+          doc(db, "categories", existing.id),
           { subcategories: updatedSubcategories },
           { merge: true }
         );
         setCategories(
           categories.map((cat) =>
-            cat.name === newCategory.name
-              ? { ...cat, subcategories: updatedSubcategories }
-              : cat
+            cat.id === existing.id ? { ...cat, subcategories: updatedSubcategories } : cat
           )
         );
       } else {
@@ -256,14 +238,17 @@ export const useItemsViewModel = () => {
           name: newCategory.name,
           subcategories: [newCategory.subcategory],
         };
-        await setDoc(doc(db, "categories", newCategory.name), newCat);
-        setCategories([...categories, { id: newCategory.name, ...newCat }]);
+        console.log("Adding new category:", newCat);
+        const docRef = await addDoc(collection(db, "categories"), newCat);
+        setCategories([...categories, { id: docRef.id, ...newCat }]);
       }
       setNewCategory({ name: "", subcategory: "" });
       setIsCategoryFormOpen(false);
-    } catch (error) {
-      console.error("Add category error:", error);
-      setError("Failed to add category");
+      console.log("Category added successfully:", newCategory);
+    } catch (error: unknown) {
+      const err = error as Error; // Type assertion
+      console.error("Add category error:", err.message, err.stack);
+      setError(`Failed to add category: ${err.message || String(err)}`);
     } finally {
       setIsLoading(false);
     }

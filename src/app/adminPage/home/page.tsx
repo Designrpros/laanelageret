@@ -5,86 +5,115 @@ import styled from "styled-components";
 import { db } from "../../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 
-const Home = () => {
+const DashboardContainer = styled.div`
+  background: #fff;
+  padding: clamp(10px, 2vw, 20px);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 100%; /* Prevent overflow */
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 10px;
+  }
+`;
+
+const Title = styled.h1`
+  font-size: clamp(16px, 4vw, 28px);
+  font-weight: bold;
+  margin-bottom: clamp(10px, 2vw, 15px);
+  text-align: center;
+  color: #1a1a1a;
+
+  @media (max-width: 480px) {
+    font-size: clamp(14px, 3vw, 20px);
+  }
+`;
+
+const StatsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap; /* Switch to flex for better control */
+  gap: clamp(10px, 2vw, 15px);
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+  }
+`;
+
+const StatBox = styled.div`
+  background: #f9f9f9;
+  padding: clamp(10px, 2vw, 15px);
+  border-radius: 6px;
+  text-align: center;
+  flex: 1 1 150px; /* Grow/shrink, min 150px */
+  max-width: 200px; /* Cap width */
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    max-width: 100%; /* Full width on mobile */
+  }
+`;
+
+const StatNumber = styled.div`
+  font-size: clamp(18px, 3vw, 22px);
+  font-weight: bold;
+  color: #ffdd00;
+`;
+
+const StatLabel = styled.div`
+  font-size: clamp(12px, 2vw, 14px);
+  color: #555;
+`;
+
+export default function Home() {
   const [totalItems, setTotalItems] = useState(0);
   const [activeLoans, setActiveLoans] = useState(0);
   const [pendingReports, setPendingReports] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let unsubscribeItems: () => void;
-    let unsubscribeUsers: () => void;
-    let unsubscribeReports: () => void;
+    let timeout: NodeJS.Timeout;
 
-    try {
-      unsubscribeItems = onSnapshot(collection(db, "items"), (snapshot) => {
-        console.log("Items snapshot:", snapshot.docs.length);
+    const unsubItems = onSnapshot(collection(db, "items"), (snapshot) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
         setTotalItems(snapshot.size);
         setLoading(false);
-      }, (err) => {
-        console.error("Items listener error:", err);
-        setError("Failed to load items: " + err.message);
-        setLoading(false);
-      });
+      }, 100);
+    });
 
-      unsubscribeUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
         const rentals = snapshot.docs.flatMap((doc) => doc.data().rentals || []);
-        console.log("Users snapshot - rentals:", rentals.length);
         setActiveLoans(rentals.length);
-        setLoading(false);
-      }, (err) => {
-        console.error("Users listener error:", err);
-        setError("Failed to load users: " + err.message);
-        setLoading(false);
-      });
+      }, 100);
+    });
 
-      unsubscribeReports = onSnapshot(collection(db, "reports"), (snapshot) => {
+    const unsubReports = onSnapshot(collection(db, "reports"), (snapshot) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
         const pending = snapshot.docs.filter((doc) => doc.data().status === "pending").length;
-        console.log("Reports snapshot - pending:", pending);
         setPendingReports(pending);
-        setLoading(false);
-      }, (err) => {
-        console.error("Reports listener error:", err);
-        setError("Failed to load reports: " + err.message);
-        setLoading(false);
-      });
-    } catch (err) {
-      console.error("Setup error:", err);
-      setError("Error setting up listeners: " + (err as Error).message);
-      setLoading(false);
-    }
+      }, 100);
+    });
 
     return () => {
-      console.log("Cleaning up Home listeners");
-      unsubscribeItems && unsubscribeItems();
-      unsubscribeUsers && unsubscribeUsers();
-      unsubscribeReports && unsubscribeReports();
+      clearTimeout(timeout);
+      unsubItems();
+      unsubUsers();
+      unsubReports();
     };
   }, []);
 
-  if (loading) {
-    return (
-      <DashboardContainer>
-        <Title>Admin Dashboard</Title>
-        <LoadingMessage>Loading dashboard data...</LoadingMessage>
-      </DashboardContainer>
-    );
-  }
-
-  if (error) {
-    return (
-      <DashboardContainer>
-        <Title>Admin Dashboard</Title>
-        <ErrorMessage>{error}</ErrorMessage>
-      </DashboardContainer>
-    );
-  }
+  if (loading) return <DashboardContainer>Loading...</DashboardContainer>;
 
   return (
     <DashboardContainer>
       <Title>Admin Dashboard</Title>
-      <Description>Manage loans, inventory, and users efficiently.</Description>
       <StatsContainer>
         <StatBox>
           <StatNumber>{totalItems}</StatNumber>
@@ -101,66 +130,4 @@ const Home = () => {
       </StatsContainer>
     </DashboardContainer>
   );
-};
-
-export default Home;
-
-const DashboardContainer = styled.div`
-  font-family: "Helvetica", Arial, sans-serif;
-  background-color: #333;
-  padding: 30px;
-  border-radius: 12px;
-  color: white;
-  max-width: 1000px;
-  margin: 40px auto;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-`;
-
-const Title = styled.h1`
-  font-size: 28px;
-  font-weight: bold;
-  margin-bottom: 10px;
-  text-align: center;
-`;
-
-const Description = styled.p`
-  font-size: 18px;
-  opacity: 0.9;
-  margin-bottom: 20px;
-  text-align: center;
-`;
-
-const StatsContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 20px;
-  border-radius: 8px;
-`;
-
-const StatBox = styled.div`
-  text-align: center;
-`;
-
-const StatNumber = styled.div`
-  font-size: 24px;
-  font-weight: bold;
-  color: #ffdd00;
-`;
-
-const StatLabel = styled.div`
-  font-size: 16px;
-  opacity: 0.8;
-`;
-
-const LoadingMessage = styled.div`
-  text-align: center;
-  opacity: 0.7;
-`;
-
-const ErrorMessage = styled.div`
-  color: #ff4444;
-  text-align: center;
-  margin-top: 20px;
-`;
+}

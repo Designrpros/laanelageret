@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { db, auth, googleProvider} from "../../firebase";
+import { db, auth, googleProvider } from "../../firebase";
 import { collection, onSnapshot, doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signInWithPopup} from "firebase/auth";
+import { signInWithPopup } from "firebase/auth";
 
 interface Item {
   id: string;
@@ -37,6 +37,7 @@ const CheckoutContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center; /* Center vertically */
 `;
 
 const ContentWrapper = styled.div`
@@ -62,39 +63,52 @@ const CartList = styled.div`
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: clamp(0.75rem, 2vw, 1rem);
+
+  @media (max-width: 480px) {
+    gap: 0.5rem; /* Tighter spacing on small screens */
+  }
 `;
 
 const CartItem = styled.div`
   background: #fff;
-  padding: 1rem;
+  padding: clamp(0.75rem, 2vw, 1rem);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: clamp(0.5rem, 1.5vw, 1rem);
+
+  @media (max-width: 480px) {
+    flex-direction: column; /* Stack items vertically on small screens */
+    align-items: flex-start;
+  }
 `;
 
 const CartItemImage = styled.img`
-  width: 80px;
-  height: 80px;
+  width: clamp(60px, 10vw, 80px);
+  height: clamp(60px, 10vw, 80px);
   object-fit: cover;
   border-radius: 4px;
 `;
 
 const CartItemDetails = styled.div`
   flex-grow: 1;
+
+  @media (max-width: 480px) {
+    width: 100%; /* Full width on small screens */
+  }
 `;
 
 const CartItemName = styled.p`
-  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
   color: #1a1a1a;
   font-weight: 500;
   margin-bottom: 0.25rem;
 `;
 
 const CartItemCategory = styled.p`
-  font-size: clamp(0.9rem, 2vw, 1rem);
+  font-size: clamp(0.8rem, 2vw, 1rem);
   color: #666;
   margin-bottom: 0.5rem;
 `;
@@ -102,17 +116,22 @@ const CartItemCategory = styled.p`
 const QuantityControls = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
+
+  @media (max-width: 480px) {
+    margin-top: 0.5rem; /* Space above controls on small screens */
+  }
 `;
 
 const QuantityButton = styled.button`
-  padding: 5px 10px;
+  padding: clamp(4px, 1vw, 8px) clamp(8px, 2vw, 12px);
   background: #1a1a1a;
   color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.3s ease;
+  font-size: clamp(0.9rem, 2vw, 1rem);
 
   &:hover {
     background: #333;
@@ -124,38 +143,46 @@ const QuantityButton = styled.button`
 `;
 
 const QuantityInput = styled.input`
-  width: 60px;
-  padding: 5px;
+  width: clamp(40px, 8vw, 60px);
+  padding: clamp(4px, 1vw, 6px);
   text-align: center;
   border: 1px solid #ccc;
   border-radius: 4px;
+  font-size: clamp(0.9rem, 2vw, 1rem);
 `;
 
 const RemoveButton = styled.button`
   background: #ff4444;
   color: #fff;
   border: none;
-  padding: 5px 10px;
+  padding: clamp(4px, 1vw, 8px) clamp(8px, 2vw, 12px);
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.3s ease;
+  font-size: clamp(0.9rem, 2vw, 1rem);
 
   &:hover {
     background: #cc3333;
+  }
+
+  @media (max-width: 480px) {
+    margin-top: 0.5rem; /* Space above button on small screens */
+    width: 100%; /* Full width for better tap target */
   }
 `;
 
 const ConfirmButton = styled.button`
   width: 100%;
   max-width: 300px;
-  padding: 12px;
+  padding: clamp(10px, 2vw, 14px);
   background: #1a1a1a;
   color: #fff;
   border: none;
   border-radius: 8px;
   font-size: clamp(1rem, 2vw, 1.25rem);
   cursor: pointer;
-  margin-top: 2rem;
+  margin: clamp(1.5rem, 3vw, 2rem) auto 0; /* Center horizontally */
+  display: block; /* Ensure block behavior */
   transition: background 0.3s ease;
 
   &:hover {
@@ -166,14 +193,15 @@ const ConfirmButton = styled.button`
 const LoginButton = styled.button`
   width: 100%;
   max-width: 300px;
-  padding: 12px;
+  padding: clamp(10px, 2vw, 14px);
   background: #4285f4;
   color: #fff;
   border: none;
   border-radius: 8px;
   font-size: clamp(1rem, 2vw, 1.25rem);
   cursor: pointer;
-  margin-top: 1rem;
+  margin: clamp(1rem, 2vw, 1.5rem) auto 0; /* Center horizontally */
+  display: block;
   transition: background 0.3s ease;
 
   &:hover {
@@ -191,7 +219,6 @@ const CheckoutClient = () => {
   const returnTo = searchParams.get("returnTo") || "/utlaan/1";
 
   useEffect(() => {
-    // Load cart from localStorage or Firestore
     const savedCart = localStorage.getItem("cart");
     if (savedCart) setCart(JSON.parse(savedCart));
 
@@ -257,7 +284,7 @@ const CheckoutClient = () => {
         if (item && cartItem.quantity <= item.inStock - item.rented) {
           await updateDoc(itemRef, {
             rented: item.rented + cartItem.quantity,
-            inStock: item.inStock - cartItem.quantity, // Fixed stock decrement
+            inStock: item.inStock - cartItem.quantity,
           });
         } else {
           throw new Error(`Ikke nok på lager for ${cartItem.name}`);
@@ -279,7 +306,6 @@ const CheckoutClient = () => {
         { merge: true }
       );
 
-      // Clear cart in Firestore and localStorage
       const userCartRef = doc(db, "users", user.uid, "cart", "current");
       await setDoc(userCartRef, { items: [] }, { merge: true });
       localStorage.setItem("cart", JSON.stringify([]));

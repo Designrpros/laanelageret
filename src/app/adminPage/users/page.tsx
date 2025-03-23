@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import styled from "styled-components";
-import { db, auth } from "../../../firebase";
+import { db } from "../../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
-import { useRouter } from "next/navigation";
 
 interface Rental {
   itemId: string;
@@ -20,49 +19,71 @@ interface UserData {
 }
 
 const Container = styled.div`
-  min-height: 100vh;
-  padding: 4rem 2rem;
+  padding: clamp(10px, 2vw, 20px);
   background: #fff;
   font-family: "Helvetica", Arial, sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 10px;
+  }
 `;
 
 const Title = styled.h1`
-  font-size: clamp(2rem, 5vw, 3rem);
+  font-size: clamp(18px, 4vw, 32px);
   font-weight: 700;
   color: #1a1a1a;
-  margin-bottom: 2rem;
+  margin-bottom: clamp(10px, 2vw, 20px);
   text-align: center;
+
+  @media (max-width: 480px) {
+    font-size: clamp(16px, 3vw, 24px);
+  }
 `;
 
 const UserGrid = styled.div`
   width: 100%;
-  max-width: 1200px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(10px, 2vw, 15px);
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+  }
 `;
 
 const UserCard = styled.div`
   background: #fff;
-  padding: 1.5rem;
+  padding: clamp(10px, 2vw, 15px);
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 300px;
+  box-sizing: border-box;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
   }
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+  }
 `;
 
 const UserEmail = styled.h3`
-  font-size: 1.5rem;
+  font-size: clamp(14px, 3vw, 18px);
   color: #1a1a1a;
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: clamp(0.5rem, 1vw, 1rem);
 `;
 
 const RentalList = styled.ul`
@@ -72,9 +93,9 @@ const RentalList = styled.ul`
 `;
 
 const RentalItem = styled.li`
-  font-size: 1rem;
+  font-size: clamp(12px, 2vw, 16px);
   color: #555;
-  padding: 0.5rem 0;
+  padding: clamp(0.25rem, 1vw, 0.5rem) 0;
   border-bottom: 1px solid #eee;
 
   &:last-child {
@@ -83,7 +104,7 @@ const RentalItem = styled.li`
 `;
 
 const EmptyMessage = styled.p`
-  font-size: 1rem;
+  font-size: clamp(12px, 2vw, 16px);
   color: #666;
   font-style: italic;
 `;
@@ -91,14 +112,8 @@ const EmptyMessage = styled.p`
 const Users = () => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
-    if (!auth.currentUser) {
-      router.push("/login?returnTo=/users");
-      return;
-    }
-
     let timeout: NodeJS.Timeout;
     const unsubscribe = onSnapshot(
       collection(db, "users"),
@@ -124,7 +139,7 @@ const Users = () => {
       clearTimeout(timeout);
       unsubscribe();
     };
-  }, [router]);
+  }, []);
 
   const memoizedUsers = useMemo(() => users, [users]);
 

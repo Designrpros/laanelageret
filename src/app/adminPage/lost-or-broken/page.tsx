@@ -19,51 +19,74 @@ interface Report {
 }
 
 const Container = styled.div`
-  min-height: 100vh;
-  padding: 4rem 2rem;
+  padding: clamp(10px, 2vw, 20px);
   font-family: "Helvetica", Arial, sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 10px;
+  }
 `;
 
 const Title = styled.h1`
-  font-size: clamp(2rem, 5vw, 3rem);
+  font-size: clamp(18px, 4vw, 32px);
   font-weight: 700;
   color: #1a1a1a;
-  margin-bottom: 2rem;
+  margin-bottom: clamp(10px, 2vw, 20px);
+  text-align: center;
+
+  @media (max-width: 480px) {
+    font-size: clamp(16px, 3vw, 24px);
+  }
 `;
 
 const ReportGrid = styled.div`
   width: 100%;
-  max-width: 1000px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
+  display: flex;
+  flex-wrap: wrap; /* Switch to flex for better responsiveness */
+  gap: clamp(10px, 2vw, 15px);
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+  }
 `;
 
 const ReportCard = styled.div`
   background: #fff;
-  padding: 1.5rem;
+  padding: clamp(10px, 2vw, 15px);
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 300px; /* Cap card width */
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    max-width: 100%; /* Full width on mobile */
+  }
 `;
 
 const ReportHeader = styled.h3`
-  font-size: 1.25rem;
+  font-size: clamp(14px, 3vw, 18px);
   color: #1a1a1a;
   font-weight: 600;
   margin-bottom: 0.5rem;
 `;
 
 const ReportDetail = styled.p`
-  font-size: 1rem;
+  font-size: clamp(12px, 2vw, 16px);
   color: #555;
   margin: 0.25rem 0;
 `;
 
-const StatusBadge = styled.span<{ $status: string }>` // Changed to $status
-  font-size: 0.9rem;
+const StatusBadge = styled.span<{ $status: string }>`
+  font-size: clamp(10px, 2vw, 14px);
   color: #fff;
   background: ${({ $status }) => ($status === "pending" ? "#ff4444" : "#1a1a1a")};
   padding: 4px 12px;
@@ -74,13 +97,14 @@ const StatusBadge = styled.span<{ $status: string }>` // Changed to $status
 
 const ResolveButton = styled.button`
   margin-top: 1rem;
-  padding: 8px 16px;
+  padding: clamp(6px, 1vw, 8px) clamp(10px, 2vw, 16px);
   background: #1a1a1a;
   color: #fff;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.3s ease;
+  font-size: clamp(12px, 2vw, 16px);
 
   &:hover {
     background: #333;

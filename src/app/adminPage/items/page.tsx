@@ -5,22 +5,34 @@ import styled from "styled-components";
 import { useItemsViewModel } from "./viewModel";
 import { ItemList } from "./ItemList";
 
-// Styled Components
 const Container = styled.div`
   font-family: "Helvetica", Arial, sans-serif;
-  background: transparent; /* No background to blend with MainContent */
-  padding: 0; /* Remove padding, let MainContent handle it */
+  background: #fff;
+  padding: clamp(10px, 2vw, 20px);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   color: #1a1a1a;
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto; /* Center content */
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+
+  @media (max-width: 768px) {
+    padding: 10px;
+  }
 `;
 
 const Title = styled.h1`
-  font-size: clamp(24px, 4vw, 32px);
+  font-size: clamp(16px, 4vw, 32px);
   font-weight: bold;
-  margin-bottom: 20px;
+  margin-bottom: clamp(10px, 2vw, 20px);
   color: #1a1a1a;
+  text-align: center;
+
+  @media (max-width: 480px) {
+    font-size: clamp(14px, 3vw, 24px);
+    text-align: left;
+  }
 `;
 
 const Items = () => {
@@ -46,16 +58,24 @@ const Items = () => {
     handleAddCategory,
     filterCategories,
     filteredItems,
+    isLoading, // Added for loading state
+    error, // Added for error feedback
+    clearError, // Added to clear errors
   } = useItemsViewModel();
 
   const setDropdownPosition = (buttonRef: HTMLButtonElement | null) => {
     if (buttonRef && isCategoryPickerOpen) {
       const rect = buttonRef.getBoundingClientRect();
-      const dropdown = buttonRef.nextElementSibling as HTMLElement;
+      const dropdown = buttonRef.nextElementSibling as HTMLElement | null;
       if (dropdown) {
         dropdown.style.top = `${rect.bottom + window.scrollY}px`;
         dropdown.style.left = `${rect.left + window.scrollX}px`;
         dropdown.style.width = `${rect.width}px`;
+        if (window.innerWidth < 768) {
+          dropdown.style.width = "90%";
+          dropdown.style.left = "5%";
+          dropdown.style.maxWidth = "none";
+        }
       }
     }
   };
@@ -85,6 +105,9 @@ const Items = () => {
         handleAddItem={handleAddItem}
         handleAddCategory={handleAddCategory}
         setDropdownPosition={setDropdownPosition}
+        isLoading={isLoading} // Pass loading state
+        error={error} // Pass error feedback
+        clearError={clearError} // Pass clearError function
       />
     </Container>
   );
