@@ -18,6 +18,8 @@ const Navbar = styled.nav`
   display: flex;
   align-items: center;
   padding: 10px;
+  background: #000; /* Black background */
+  border-radius: 8px; /* Slight rounding for aesthetics */
 `;
 
 interface BurgerIconProps {
@@ -35,7 +37,7 @@ const BurgerIcon = styled.div<BurgerIconProps>`
   div {
     width: 35px;
     height: 4px;
-    background-color: black;
+    background-color: #fff; /* White bars */
     border-radius: 2px;
     transition: all 0.3s ease;
   }
@@ -175,12 +177,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ activeTab, onTabChange }) => {
               Login
             </MenuItem>
           </Link>
-          {/* Moved comment outside Link */}
           <Link href="/adminPage" passHref legacyBehavior>
             <MenuItem $isActive={activeTab === "admin"} onClick={() => handleTabClick("admin")}>
               Admin
             </MenuItem>
-          </Link> {/* Changed from /admin to /adminPage */}
+          </Link>
         </BottomWrapper>
       </Menu>
     </>
