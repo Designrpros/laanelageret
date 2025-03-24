@@ -2,9 +2,11 @@
 
 import React, { createContext, useContext, useState, useCallback } from "react";
 
+type AdminTab = "home" | "users" | "items" | "lost-or-broken" | "receipts" | "history"; // Updated type
+
 interface AdminContextType {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  activeTab: AdminTab; // Use the updated type
+  onTabChange: (tab: AdminTab) => void; // Use the updated type
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -18,9 +20,9 @@ export const useAdminContext = () => {
 };
 
 export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
-  const [activeTab, setActiveTab] = useState("home");
+  const [activeTab, setActiveTab] = useState<AdminTab>("home"); // Type explicitly set
 
-  const onTabChange = useCallback((tab: string) => {
+  const onTabChange = useCallback((tab: AdminTab) => {
     console.log(`[AdminContext] Switching to tab: ${tab}`);
     setActiveTab(tab);
   }, []);

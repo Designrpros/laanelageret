@@ -11,6 +11,10 @@ import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
+import ReceiptOutlinedIcon from "@mui/icons-material/ReceiptOutlined"; // New icon for Receipts
+import ReceiptIcon from "@mui/icons-material/Receipt"; // Filled icon for Receipts
+import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined"; // New icon for History
+import HistoryIcon from "@mui/icons-material/History"; // Filled icon for History
 import MenuIcon from "@mui/icons-material/Menu";
 
 const Nav = styled.nav<{ $isOpen: boolean }>`
@@ -38,10 +42,11 @@ const NavList = styled.ul<{ $isOpen: boolean }>`
     position: absolute;
     top: 60px;
     left: 0;
-    right: 0;
+    width: 200px; /* Fixed width for left-aligned menu */
     background: #ffffff;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     display: ${({ $isOpen }) => ($isOpen ? "flex" : "none")};
+    align-items: flex-start; /* Align items to the left */
   }
 `;
 
@@ -52,7 +57,7 @@ const NavItem = styled.li<{ $isActive: boolean }>`
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: ${({ $isActive }) => ($isActive ? "bold" : "normal")}; /* Emphasize active tab */
+  font-weight: ${({ $isActive }) => ($isActive ? "bold" : "normal")};
 
   &:hover {
     background: #f0f0f0;
@@ -60,7 +65,7 @@ const NavItem = styled.li<{ $isActive: boolean }>`
 
   @media (max-width: 768px) {
     width: 100%;
-    justify-content: center;
+    justify-content: flex-start; /* Align content to the left */
   }
 `;
 
@@ -122,6 +127,13 @@ export default function Navbar() {
         >
           {activeTab === "lost-or-broken" ? <ReportProblemIcon /> : <ReportProblemOutlinedIcon />}
           Lost/Broken
+        </NavItem>
+        <NavItem
+          $isActive={activeTab === "history"}
+          onClick={() => onTabChange("history")}
+        >
+          {activeTab === "history" ? <HistoryIcon /> : <HistoryOutlinedIcon />}
+          History
         </NavItem>
       </NavList>
     </Nav>

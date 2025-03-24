@@ -7,6 +7,7 @@ import Home from "./home/page";
 import Users from "./users/page";
 import Items from "./items/page";
 import LostOrBroken from "./lost-or-broken/page";
+import History from "./history/page"; // New import
 import styled from "styled-components";
 
 const LayoutWrapper = styled.div`
@@ -14,21 +15,21 @@ const LayoutWrapper = styled.div`
   background: #f5f5f5;
   display: flex;
   flex-direction: column;
-  width: 100vw; /* Full viewport width */
-  overflow-x: hidden; /* Prevent horizontal overflow */
+  width: 100vw;
+  overflow-x: hidden;
 `;
 
 const ContentWrapper = styled.main`
   flex-grow: 1;
   padding: clamp(10px, 2vw, 20px);
-  width: 100%; /* Full width */
-  max-width: 100vw; /* Cap at viewport width */
-  margin: 60px auto 0; /* Navbar offset */
-  box-sizing: border-box; /* Include padding in width */
+  width: 100%;
+  max-width: 100vw;
+  margin: 60px auto 0;
+  box-sizing: border-box;
 
   @media (max-width: 768px) {
-    margin-top: 70px; /* Extra space for mobile navbar */
-    padding: 10px; /* Tighten padding */
+    margin-top: 70px;
+    padding: 10px;
   }
 `;
 
@@ -46,6 +47,8 @@ const AdminContent = () => {
         return <Items />;
       case "lost-or-broken":
         return <LostOrBroken />;
+      case "history":
+        return <History />;
       default:
         return <div>Invalid tab: {activeTab}</div>;
     }

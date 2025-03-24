@@ -60,18 +60,6 @@ interface ItemListProps {
   clearError: () => void; // Added to clear errors
 }
 
-const Container = styled.div`
-  width: 100%;
-  max-width: 100%;
-  padding: clamp(10px, 2vw, 20px); /* Apply padding on all sides */
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  box-sizing: border-box;
-  overflow-x: hidden; /* Prevent horizontal overflow */
-`;
-
 export const ItemList: React.FC<ItemListProps> = (props) => {
   const [stockUpdates, setStockUpdates] = useState<{
     [key: string]: { rented: number; inStock: number };
@@ -123,3 +111,16 @@ export const ItemList: React.FC<ItemListProps> = (props) => {
     </Container>
   );
 };
+
+
+const Container = styled.div`
+  width: 100%;
+  max-width: 100%;
+  padding: clamp(10px, 2vw, 20px); /* Apply padding on all sides */
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  overflow-x: hidden; /* Prevent horizontal overflow */
+`;
