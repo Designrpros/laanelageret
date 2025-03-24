@@ -4,6 +4,7 @@ const nextConfig = {
   images: {
     domains: ["firebasestorage.googleapis.com"], // Allows Firebase-hosted images
   },
+  output: "export", // Enable static export
 };
 
 module.exports = nextConfig;

@@ -1,3 +1,4 @@
+// src/app/login/GoogleLoginForm.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -16,43 +17,71 @@ const GoogleLoginForm = () => {
   const returnTo = searchParams.get("returnTo") || "/";
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    // Listen for Firebase auth state (web)
+    const unsubscribeFirebase = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        console.log("User signed in:", currentUser.email, "UID:", currentUser.uid);
+        console.log("User signed in (Firebase):", currentUser.email, "UID:", currentUser.uid);
         setUser(currentUser);
-
-        // Update Firestore with user data
-        try {
-          const userRef = doc(db, "users", currentUser.uid);
-          await setDoc(
-            userRef,
-            {
-              email: currentUser.email,
-              createdAt: currentUser.metadata.creationTime || new Date().toISOString(),
-              lastLogin: new Date().toISOString(),
-              rentals: [], // Initialize empty rentals if not present
-              cart: { items: [] }, // Initialize empty cart
-            },
-            { merge: true }
-          );
-          console.log("User document updated in Firestore:", currentUser.uid);
-        } catch (err) {
-          console.error("Error updating user in Firestore:", err);
-        }
+        await updateFirestoreUser(currentUser);
+        router.push(returnTo); // Redirect after successful login
       } else {
         setUser(null);
       }
     });
-    return () => unsubscribe();
-  }, []); // Removed router and returnTo from dependencies to prevent constant redirect
+
+    // Listen for iOS bridge auth state
+    const handleAuthState = (event: any) => {
+      const authData = event.detail;
+      if (authData?.email && authData?.token) {
+        console.log("Auth state received from iOS:", authData.email);
+        setUser({ email: authData.email, token: authData.token });
+        // Optionally, redirect without Firebase if iOS handles auth fully
+        router.push(returnTo);
+      }
+    };
+    window.addEventListener("authState", handleAuthState);
+
+    return () => {
+      unsubscribeFirebase();
+      window.removeEventListener("authState", handleAuthState);
+    };
+  }, [router, returnTo]);
+
+  const updateFirestoreUser = async (currentUser: any) => {
+    try {
+      const userRef = doc(db, "users", currentUser.uid);
+      await setDoc(
+        userRef,
+        {
+          email: currentUser.email,
+          createdAt: currentUser.metadata.creationTime || new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          rentals: [],
+          cart: { items: [] },
+        },
+        { merge: true }
+      );
+      console.log("User document updated in Firestore:", currentUser.uid);
+    } catch (err) {
+      console.error("Error updating user in Firestore:", err);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log("Google sign-in successful:", result.user.email);
-      router.push(returnTo); // Redirect only on successful sign-in
+
+      // Check if running in iOS WKWebView
+      if (window.webkit?.messageHandlers?.signIn) {
+        console.log("Triggering native Google login via iOS bridge");
+        window.webkit.messageHandlers.signIn.postMessage("google");
+      } else {
+        // Fallback to Firebase popup for web
+        console.log("Using Firebase signInWithPopup for web");
+        const result = await signInWithPopup(auth, googleProvider);
+        console.log("Google sign-in successful:", result.user.email);
+      }
     } catch (error: any) {
       console.error("Google sign-in error:", error);
       setError(getFirebaseErrorMessage(error));
@@ -66,8 +95,8 @@ const GoogleLoginForm = () => {
       setLoading(true);
       await signOut(auth);
       console.log("User signed out");
-      setUser(null); // Clear user state
-      router.push("/login"); // Redirect to login page after sign-out
+      setUser(null);
+      router.push("/login");
     } catch (error: any) {
       console.error("Sign out error:", error);
       setError("Error signing out. Please try again.");

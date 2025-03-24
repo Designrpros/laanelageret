@@ -1,9 +1,13 @@
 // src/app/utlaan/[id]/page.tsx
 import LocationDetailClient from "./LocationDetailClient";
 
-// Use type assertion to bypass strict typing
-export default async function Page(props: any) {
-  const { params } = props;
-  const resolvedParams = await params; // Still treat params as a Promise
-  return <LocationDetailClient id={resolvedParams.id} />;
+export async function generateStaticParams() {
+  const locations = [{ id: "1" }]; // Stabekk - add more IDs if needed
+  return locations.map((location) => ({
+    id: location.id,
+  }));
+}
+
+export default function Page({ params }: { params: { id: string } }) {
+  return <LocationDetailClient id={params.id} />;
 }
