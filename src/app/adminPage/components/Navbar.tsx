@@ -29,6 +29,8 @@ const Nav = styled.nav<{ $isOpen: boolean }>`
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: "Helvetica", Arial, sans-serif;
+
 `;
 
 const NavList = styled.ul<{ $isOpen: boolean }>`

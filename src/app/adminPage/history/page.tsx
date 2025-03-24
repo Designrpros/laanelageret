@@ -59,6 +59,7 @@ const HistoryContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   box-sizing: border-box;
+  font-family: "Helvetica", Arial, sans-serif;
 
   @media (max-width: 768px) {
     padding: 15px;
@@ -85,7 +86,7 @@ const HistoryList = styled.ul`
   margin: 0;
 `;
 
-const HistoryItem = styled.li<{ $category: string }>`
+const HistoryItem = styled.li<{ $category: string; $action?: string }>`
   background: #fff;
   border: 1px solid #eee;
   border-radius: 8px;
@@ -95,8 +96,14 @@ const HistoryItem = styled.li<{ $category: string }>`
   justify-content: space-between;
   align-items: center;
   transition: box-shadow 0.3s ease;
-  background: ${({ $category }) =>
-    $category === "rental" ? "#fff3f3" : $category === "report" ? "#f9f9f9" : "#fff"};
+  background: ${({ $category, $action }) =>
+    $category === "rental" && $action === "Rental Returned"
+      ? "#e6ffe6" // Light green for Rental Returned
+      : $category === "rental"
+      ? "#fff3f3" // Light red for Rental Started
+      : $category === "report"
+      ? "#f9f9f9" // Light gray for reports
+      : "#fff"}; // Default white
 
   &:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -133,7 +140,7 @@ const History = () => {
   const [receipts, setReceipts] = useState<ReceiptEntry[]>([]);
   const [filter, setFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null); // Add error state
+  const [error, setError] = useState<string | null>(null);
 
   const filterCategories = ["all", "user", "item", "rental", "report"];
 
@@ -224,13 +231,12 @@ const History = () => {
       }
     );
 
-    // Clear loading state after a timeout or when all listeners have fired
     const timeout = setTimeout(() => {
       if (!errorOccurred) {
         console.log("[History] All listeners resolved or timed out");
         setLoading(false);
       }
-    }, 5000); // 5-second fallback
+    }, 5000);
 
     return () => {
       unsubUsers();
@@ -238,7 +244,7 @@ const History = () => {
       unsubReports();
       unsubReceipts();
       clearTimeout(timeout);
-      if (errorOccurred) setLoading(false); // Ensure loading clears on cleanup
+      if (errorOccurred) setLoading(false);
     };
   }, []);
 
@@ -313,7 +319,7 @@ const History = () => {
       {filteredHistory.length > 0 ? (
         <HistoryList>
           {filteredHistory.map((entry) => (
-            <HistoryItem key={entry.id} $category={entry.category}>
+            <HistoryItem key={entry.id} $category={entry.category} $action={entry.action}>
               <HistoryDetails>
                 <strong>{entry.action}</strong> - {entry.details}
               </HistoryDetails>
