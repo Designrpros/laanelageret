@@ -4,9 +4,9 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { db, auth } from "../../firebase";
-import { doc, getDoc, updateDoc, setDoc, collection, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc, collection, onSnapshot, addDoc } from "firebase/firestore"; // Added addDoc
 import { useRouter } from "next/navigation";
-import { ReportForm } from "./ReportForm"; // Adjust path as needed
+import { ReportForm } from "./ReportForm";
 
 interface Rental {
   itemId: string;
@@ -29,6 +29,216 @@ interface UserData {
   email: string;
   rentals: Rental[];
 }
+
+// Styled components (unchanged, omitted for brevity)
+
+const Lever = () => {
+  const [userRentals, setUserRentals] = useState<Rental[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedRental, setSelectedRental] = useState<string>("");
+  const [reportDetails, setReportDetails] = useState("");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!auth.currentUser) {
+      router.push("/login?returnTo=/lever");
+      return;
+    }
+
+    const user = auth.currentUser;
+    const userRef = doc(db, "users", user.uid);
+
+    const unsubscribeUser = onSnapshot(userRef, (doc) => {
+      if (doc.exists()) {
+        const data = doc.data() as UserData;
+        console.log("User data from Firestore:", data);
+        const rentals = data.rentals || [];
+        console.log("Rentals array:", rentals);
+        setUserRentals(rentals);
+      } else {
+        console.log("User document does not exist");
+        setUserRentals([]);
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching user rentals:", error);
+      setLoading(false);
+    });
+
+    const unsubscribeItems = onSnapshot(collection(db, "items"), (snapshot) => {
+      const fetchedItems = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        name: doc.data().name,
+        imageUrl: doc.data().imageUrl || "/placeholder-image.jpg",
+        category: doc.data().category || "Unknown",
+        subcategory: doc.data().subcategory,
+        rented: doc.data().rented || 0,
+        inStock: doc.data().inStock || 0,
+      })) as Item[];
+      console.log("Fetched items:", fetchedItems);
+      setItems(fetchedItems);
+    }, (error) => {
+      console.error("Error fetching items:", error);
+    });
+
+    return () => {
+      unsubscribeUser();
+      unsubscribeItems();
+    };
+  }, [router]);
+
+  const logRentalReturn = async (userId: string, email: string, itemId: string, itemName: string, quantity: number) => {
+    try {
+      await addDoc(collection(db, "receipts"), {
+        userId,
+        email,
+        itemId,
+        itemName,
+        quantity,
+        date: new Date().toISOString(),
+        type: "return",
+      });
+      console.log(`[Lever] Return logged: ${email} - ${itemName} (Qty: ${quantity})`);
+    } catch (error) {
+      console.error("[Lever] Error logging return:", error);
+    }
+  };
+
+  const handleReturn = async (rental: Rental) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      const itemRef = doc(db, "items", rental.itemId);
+      const item = items.find((i) => i.id === rental.itemId);
+      if (item) {
+        const newRented = Math.max(0, item.rented - rental.quantity);
+        const newInStock = item.inStock + rental.quantity;
+        console.log(`Returning ${rental.name}: rented=${newRented}, inStock=${newInStock}`);
+        await updateDoc(itemRef, {
+          rented: newRented,
+          inStock: newInStock,
+        });
+        // Log rental return
+        await logRentalReturn(user.uid, user.email || "Unknown", rental.itemId, rental.name, rental.quantity);
+      }
+
+      const userRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userRef);
+      const currentRentals = (userDoc.data() as UserData).rentals || [];
+      const updatedRentals = currentRentals.filter(
+        (r) => r.itemId !== rental.itemId || r.date !== rental.date
+      );
+      console.log("Updated rentals after return:", updatedRentals);
+
+      await setDoc(userRef, { rentals: updatedRentals }, { merge: true });
+
+      setUserRentals(updatedRentals);
+      alert(`${rental.name} returned successfully!`);
+    } catch (error) {
+      console.error("Return error:", error);
+      alert("Failed to return item. Try again.");
+    }
+  };
+
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const user = auth.currentUser;
+    if (!user || !selectedRental || !reportDetails) return;
+
+    try {
+      const selected = userRentals.find((r) => `${r.itemId}-${r.date}` === selectedRental);
+      if (!selected) return;
+
+      const reportRef = doc(collection(db, "reports"));
+      await setDoc(reportRef, {
+        userId: user.uid,
+        email: user.email,
+        itemId: selected.itemId,
+        itemName: selected.name,
+        quantity: selected.quantity,
+        dateRented: selected.date,
+        reportDetails,
+        reportedAt: new Date().toISOString(),
+        status: "pending",
+      });
+
+      alert("Rapport sendt inn!");
+      setSelectedRental("");
+      setReportDetails("");
+      setIsFormOpen(false);
+    } catch (error) {
+      console.error("Report submission error:", error);
+      alert("Kunne ikke sende inn rapport. Prøv igjen.");
+    }
+  };
+
+  if (loading) return <LeverContainer><LeverTitle>Laster...</LeverTitle></LeverContainer>;
+
+  return (
+    <LeverContainer>
+      <ContentWrapper>
+        <LeverTitle
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+        >
+          Lever
+        </LeverTitle>
+
+        {userRentals.length > 0 ? (
+          <RentalList>
+            {userRentals.map((rental, idx) => {
+              const item = items.find((i) => i.id === rental.itemId);
+              return (
+                <RentalItem key={idx}>
+                  {item && <RentalImage src={item.imageUrl} alt={item.name} />}
+                  <RentalDetails>
+                    <RentalName>{rental.name}</RentalName>
+                    {item && (
+                      <RentalTags>
+                        <Tag>{item.category}</Tag>
+                        {item.subcategory && <Tag>{item.subcategory}</Tag>}
+                      </RentalTags>
+                    )}
+                    <RentalInfo>
+                      Antall: {rental.quantity} - Utlånt {new Date(rental.date).toLocaleDateString()}
+                    </RentalInfo>
+                  </RentalDetails>
+                  <ReturnButton onClick={() => handleReturn(rental)}>Lever</ReturnButton>
+                </RentalItem>
+              );
+            })}
+          </RentalList>
+        ) : (
+          <p>Du har ingen aktive utlån.</p>
+        )}
+
+        <ReportButton onClick={() => setIsFormOpen(!isFormOpen)}>
+          {isFormOpen ? "Avbryt" : "Rapporter mistet eller ødelagt gjenstand"}
+        </ReportButton>
+
+        <AnimatePresence>
+          {isFormOpen && (
+            <ReportForm
+              userRentals={userRentals}
+              selectedRental={selectedRental}
+              setSelectedRental={setSelectedRental}
+              reportDetails={reportDetails}
+              setReportDetails={setReportDetails}
+              handleReportSubmit={handleReportSubmit}
+            />
+          )}
+        </AnimatePresence>
+      </ContentWrapper>
+    </LeverContainer>
+  );
+};
+
+export default Lever;
+
 
 const LeverContainer = styled.div`
   min-height: 100vh;
@@ -147,193 +357,3 @@ const ReportButton = styled.button`
     background: #e6c700;
   }
 `;
-
-const Lever = () => {
-  const [userRentals, setUserRentals] = useState<Rental[]>([]);
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedRental, setSelectedRental] = useState<string>("");
-  const [reportDetails, setReportDetails] = useState("");
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!auth.currentUser) {
-      router.push("/login?returnTo=/lever");
-      return;
-    }
-
-    const user = auth.currentUser;
-    const userRef = doc(db, "users", user.uid);
-
-    // Real-time listener for user rentals with debugging
-    const unsubscribeUser = onSnapshot(userRef, (doc) => {
-      if (doc.exists()) {
-        const data = doc.data() as UserData;
-        console.log("User data from Firestore:", data); // Debug: Check what’s fetched
-        const rentals = data.rentals || [];
-        console.log("Rentals array:", rentals); // Debug: Check rentals specifically
-        setUserRentals(rentals);
-      } else {
-        console.log("User document does not exist"); // Debug: No user doc
-        setUserRentals([]);
-      }
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching user rentals:", error);
-      setLoading(false);
-    });
-
-    // Real-time listener for items
-    const unsubscribeItems = onSnapshot(collection(db, "items"), (snapshot) => {
-      const fetchedItems = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        name: doc.data().name,
-        imageUrl: doc.data().imageUrl || "/placeholder-image.jpg",
-        category: doc.data().category || "Unknown",
-        subcategory: doc.data().subcategory,
-        rented: doc.data().rented || 0,
-        inStock: doc.data().inStock || 0,
-      })) as Item[];
-      console.log("Fetched items:", fetchedItems); // Debug: Check items
-      setItems(fetchedItems);
-    }, (error) => {
-      console.error("Error fetching items:", error);
-    });
-
-    return () => {
-      unsubscribeUser();
-      unsubscribeItems();
-    };
-  }, [router]);
-
-  const handleReturn = async (rental: Rental) => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    try {
-      const itemRef = doc(db, "items", rental.itemId);
-      const item = items.find((i) => i.id === rental.itemId);
-      if (item) {
-        const newRented = Math.max(0, item.rented - rental.quantity);
-        const newInStock = item.inStock + rental.quantity;
-        console.log(`Returning ${rental.name}: rented=${newRented}, inStock=${newInStock}`); // Debug
-        await updateDoc(itemRef, {
-          rented: newRented,
-          inStock: newInStock,
-        });
-      }
-
-      const userRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userRef);
-      const currentRentals = (userDoc.data() as UserData).rentals || [];
-      const updatedRentals = currentRentals.filter(
-        (r) => r.itemId !== rental.itemId || r.date !== rental.date
-      );
-      console.log("Updated rentals after return:", updatedRentals); // Debug
-
-      await setDoc(userRef, { rentals: updatedRentals }, { merge: true });
-
-      setUserRentals(updatedRentals);
-      alert(`${rental.name} returned successfully!`);
-    } catch (error) {
-      console.error("Return error:", error);
-      alert("Failed to return item. Try again.");
-    }
-  };
-
-  const handleReportSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const user = auth.currentUser;
-    if (!user || !selectedRental || !reportDetails) return;
-
-    try {
-      const selected = userRentals.find((r) => `${r.itemId}-${r.date}` === selectedRental);
-      if (!selected) return;
-
-      const reportRef = doc(collection(db, "reports"));
-      await setDoc(reportRef, {
-        userId: user.uid,
-        email: user.email,
-        itemId: selected.itemId,
-        itemName: selected.name,
-        quantity: selected.quantity,
-        dateRented: selected.date,
-        reportDetails,
-        reportedAt: new Date().toISOString(),
-        status: "pending",
-      });
-
-      alert("Rapport sendt inn!");
-      setSelectedRental("");
-      setReportDetails("");
-      setIsFormOpen(false);
-    } catch (error) {
-      console.error("Report submission error:", error);
-      alert("Kunne ikke sende inn rapport. Prøv igjen.");
-    }
-  };
-
-  if (loading) return <LeverContainer><LeverTitle>Laster...</LeverTitle></LeverContainer>;
-
-  return (
-    <LeverContainer>
-      <ContentWrapper>
-        <LeverTitle
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-        >
-          Lever
-        </LeverTitle>
-
-        {userRentals.length > 0 ? (
-          <RentalList>
-            {userRentals.map((rental, idx) => {
-              const item = items.find((i) => i.id === rental.itemId);
-              return (
-                <RentalItem key={idx}>
-                  {item && <RentalImage src={item.imageUrl} alt={item.name} />}
-                  <RentalDetails>
-                    <RentalName>{rental.name}</RentalName>
-                    {item && (
-                      <RentalTags>
-                        <Tag>{item.category}</Tag>
-                        {item.subcategory && <Tag>{item.subcategory}</Tag>}
-                      </RentalTags>
-                    )}
-                    <RentalInfo>
-                      Antall: {rental.quantity} - Utlånt {new Date(rental.date).toLocaleDateString()}
-                    </RentalInfo>
-                  </RentalDetails>
-                  <ReturnButton onClick={() => handleReturn(rental)}>Lever</ReturnButton>
-                </RentalItem>
-              );
-            })}
-          </RentalList>
-        ) : (
-          <p>Du har ingen aktive utlån.</p>
-        )}
-
-        <ReportButton onClick={() => setIsFormOpen(!isFormOpen)}>
-          {isFormOpen ? "Avbryt" : "Rapporter mistet eller ødelagt gjenstand"}
-        </ReportButton>
-
-        <AnimatePresence>
-          {isFormOpen && (
-            <ReportForm
-              userRentals={userRentals}
-              selectedRental={selectedRental}
-              setSelectedRental={setSelectedRental}
-              reportDetails={reportDetails}
-              setReportDetails={setReportDetails}
-              handleReportSubmit={handleReportSubmit}
-            />
-          )}
-        </AnimatePresence>
-      </ContentWrapper>
-    </LeverContainer>
-  );
-};
-
-export default Lever;

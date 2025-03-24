@@ -4,9 +4,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import styled from "styled-components";
 import { db } from "../../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
-import { CategoryFilterSection } from "../items/CategoryFilterSection"; // Adjust path as needed
+import { CategoryFilterSection } from "../items/CategoryFilterSection";
 
-// Interfaces (unchanged)
 interface UserEntry {
   id: string;
   email: string;
@@ -32,6 +31,17 @@ interface ReportEntry {
   status: string;
 }
 
+interface ReceiptEntry {
+  id: string;
+  userId: string;
+  email: string;
+  itemId: string;
+  itemName: string;
+  quantity: number;
+  date: string;
+  type: "rental" | "return";
+}
+
 interface HistoryEntry {
   id: string;
   action: string;
@@ -40,7 +50,6 @@ interface HistoryEntry {
   category: "user" | "item" | "rental" | "report";
 }
 
-// Styled Components (adjusted FilterContainer)
 const HistoryContainer = styled.div`
   background: #fff;
   padding: clamp(15px, 3vw, 30px);
@@ -50,8 +59,7 @@ const HistoryContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   box-sizing: border-box;
-  font-family: "Helvetica", Arial, sans-serif;
-  
+
   @media (max-width: 768px) {
     padding: 15px;
   }
@@ -122,56 +130,121 @@ const History = () => {
   const [users, setUsers] = useState<UserEntry[]>([]);
   const [items, setItems] = useState<ItemEntry[]>([]);
   const [reports, setReports] = useState<ReportEntry[]>([]);
+  const [receipts, setReceipts] = useState<ReceiptEntry[]>([]);
   const [filter, setFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null); // Add error state
 
-  const filterCategories = ["all", "user", "item", "rental", "report"]; // Options for the picker
+  const filterCategories = ["all", "user", "item", "rental", "report"];
 
   useEffect(() => {
-    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
-      const fetchedUsers = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        email: doc.data().email || "Unknown",
-        createdAt: doc.data().createdAt || "",
-        lastLogin: doc.data().lastLogin || "",
-        rentals: doc.data().rentals || [],
-      })) as UserEntry[];
-      setUsers(fetchedUsers);
-    });
+    let errorOccurred = false;
 
-    const unsubItems = onSnapshot(collection(db, "items"), (snapshot) => {
-      const fetchedItems = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        name: doc.data().name,
-        createdAt: doc.data().createdAt || "",
-        rented: doc.data().rented || 0,
-      })) as ItemEntry[];
-      setItems(fetchedItems);
-    });
+    const unsubUsers = onSnapshot(
+      collection(db, "users"),
+      (snapshot) => {
+        const fetchedUsers = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          email: doc.data().email || "Unknown",
+          createdAt: doc.data().createdAt || "",
+          lastLogin: doc.data().lastLogin || "",
+          rentals: doc.data().rentals || [],
+        })) as UserEntry[];
+        console.log("[History] Fetched users:", fetchedUsers);
+        setUsers(fetchedUsers);
+      },
+      (error) => {
+        console.error("[History] Error fetching users:", error);
+        setError("Failed to load users: " + error.message);
+        errorOccurred = true;
+      }
+    );
 
-    const unsubReports = onSnapshot(collection(db, "reports"), (snapshot) => {
-      const fetchedReports = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        userId: doc.data().userId,
-        email: doc.data().email,
-        itemId: doc.data().itemId,
-        itemName: doc.data().itemName,
-        reportedAt: doc.data().reportedAt,
-        status: doc.data().status,
-      })) as ReportEntry[];
-      setReports(fetchedReports);
-      setLoading(false);
-    });
+    const unsubItems = onSnapshot(
+      collection(db, "items"),
+      (snapshot) => {
+        const fetchedItems = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          name: doc.data().name,
+          createdAt: doc.data().createdAt || "",
+          rented: doc.data().rented || 0,
+        })) as ItemEntry[];
+        console.log("[History] Fetched items:", fetchedItems);
+        setItems(fetchedItems);
+      },
+      (error) => {
+        console.error("[History] Error fetching items:", error);
+        setError("Failed to load items: " + error.message);
+        errorOccurred = true;
+      }
+    );
+
+    const unsubReports = onSnapshot(
+      collection(db, "reports"),
+      (snapshot) => {
+        const fetchedReports = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          userId: doc.data().userId,
+          email: doc.data().email,
+          itemId: doc.data().itemId,
+          itemName: doc.data().itemName,
+          reportedAt: doc.data().reportedAt,
+          status: doc.data().status,
+        })) as ReportEntry[];
+        console.log("[History] Fetched reports:", fetchedReports);
+        setReports(fetchedReports);
+      },
+      (error) => {
+        console.error("[History] Error fetching reports:", error);
+        setError("Failed to load reports: " + error.message);
+        errorOccurred = true;
+      }
+    );
+
+    const unsubReceipts = onSnapshot(
+      collection(db, "receipts"),
+      (snapshot) => {
+        const fetchedReceipts = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          userId: doc.data().userId,
+          email: doc.data().email,
+          itemId: doc.data().itemId,
+          itemName: doc.data().itemName,
+          quantity: doc.data().quantity,
+          date: doc.data().date,
+          type: doc.data().type,
+        })) as ReceiptEntry[];
+        console.log("[History] Fetched receipts:", fetchedReceipts);
+        setReceipts(fetchedReceipts);
+      },
+      (error) => {
+        console.error("[History] Error fetching receipts:", error);
+        setError("Failed to load receipts: " + error.message);
+        errorOccurred = true;
+      }
+    );
+
+    // Clear loading state after a timeout or when all listeners have fired
+    const timeout = setTimeout(() => {
+      if (!errorOccurred) {
+        console.log("[History] All listeners resolved or timed out");
+        setLoading(false);
+      }
+    }, 5000); // 5-second fallback
 
     return () => {
       unsubUsers();
       unsubItems();
       unsubReports();
+      unsubReceipts();
+      clearTimeout(timeout);
+      if (errorOccurred) setLoading(false); // Ensure loading clears on cleanup
     };
   }, []);
 
   const historyEntries = useMemo(() => {
     const entries: HistoryEntry[] = [];
+
     users.forEach((user) => {
       if (user.createdAt) {
         entries.push({
@@ -183,6 +256,7 @@ const History = () => {
         });
       }
     });
+
     items.forEach((item) => {
       if (item.createdAt) {
         entries.push({
@@ -194,17 +268,17 @@ const History = () => {
         });
       }
     });
-    users.forEach((user) => {
-      user.rentals.forEach((rental, index) => {
-        entries.push({
-          id: `${user.id}-rental-${index}`,
-          action: "Rental",
-          details: `${user.email} rented ${rental.name} (Qty: ${rental.quantity})`,
-          timestamp: rental.date,
-          category: "rental",
-        });
+
+    receipts.forEach((receipt) => {
+      entries.push({
+        id: receipt.id,
+        action: receipt.type === "rental" ? "Rental Started" : "Rental Returned",
+        details: `${receipt.email} ${receipt.type === "rental" ? "rented" : "returned"} ${receipt.itemName} (Qty: ${receipt.quantity})`,
+        timestamp: receipt.date,
+        category: "rental",
       });
     });
+
     reports.forEach((report) => {
       entries.push({
         id: report.id,
@@ -214,15 +288,17 @@ const History = () => {
         category: "report",
       });
     });
+
     return entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [users, items, reports]);
+  }, [users, items, reports, receipts]);
 
   const filteredHistory = useMemo(() => {
     if (filter === "all") return historyEntries;
     return historyEntries.filter((entry) => entry.category === filter);
   }, [historyEntries, filter]);
 
-  if (loading) return <HistoryContainer>Loading...</HistoryContainer>;
+  if (loading) return <HistoryContainer><Title>Loading...</Title></HistoryContainer>;
+  if (error) return <HistoryContainer><Title>{error}</Title></HistoryContainer>;
 
   return (
     <HistoryContainer>

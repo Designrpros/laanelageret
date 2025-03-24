@@ -2,13 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-
 import { motion } from "framer-motion";
 import { db, auth, googleProvider } from "../../firebase";
-import { collection, onSnapshot, doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc, getDoc, setDoc, addDoc } from "firebase/firestore"; // Added addDoc
 import { useRouter, useSearchParams } from "next/navigation";
 import { signInWithPopup } from "firebase/auth";
-// Styled components (unchanged, omitted for brevity)
 
 interface Item {
   id: string;
@@ -31,6 +29,8 @@ interface UserData {
   email: string;
   rentals: { itemId: string; name: string; quantity: number; date: string; category: string }[];
 }
+
+// Styled components (unchanged, omitted for brevity)
 
 const CheckoutClient = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -98,6 +98,23 @@ const CheckoutClient = () => {
     setCart((prev) => prev.filter((item) => item.id !== itemId));
   };
 
+  const logRentalStart = async (userId: string, email: string, itemId: string, itemName: string, quantity: number) => {
+    try {
+      await addDoc(collection(db, "receipts"), {
+        userId,
+        email,
+        itemId,
+        itemName,
+        quantity,
+        date: new Date().toISOString(),
+        type: "rental",
+      });
+      console.log(`[Checkout] Rental logged: ${email} - ${itemName} (Qty: ${quantity})`);
+    } catch (error) {
+      console.error("[Checkout] Error logging rental:", error);
+    }
+  };
+
   const handleConfirmRental = async () => {
     const user = auth.currentUser;
     if (!user || cart.length === 0) return;
@@ -117,6 +134,8 @@ const CheckoutClient = () => {
             inStock: item.inStock - cartItem.quantity,
           });
           console.log(`[Checkout] Updated item ${cartItem.id}: rented=${item.rented + cartItem.quantity}, inStock=${item.inStock - cartItem.quantity}`);
+          // Log rental start
+          await logRentalStart(user.uid, user.email || "Unknown", cartItem.id, cartItem.name, cartItem.quantity);
         } else {
           throw new Error(`Ikke nok på lager for ${cartItem.name}`);
         }

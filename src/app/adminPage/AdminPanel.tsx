@@ -7,7 +7,8 @@ import Home from "./home/page";
 import Users from "./users/page";
 import Items from "./items/page";
 import LostOrBroken from "./lost-or-broken/page";
-import History from "./history/page"; // New import
+import Receipts from "./receipts/page"; // New import
+import History from "./history/page";
 import styled from "styled-components";
 
 const LayoutWrapper = styled.div`
@@ -47,6 +48,8 @@ const AdminContent = () => {
         return <Items />;
       case "lost-or-broken":
         return <LostOrBroken />;
+      case "receipts": // Add Receipts case
+        return <Receipts />;
       case "history":
         return <History />;
       default:
