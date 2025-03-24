@@ -21,6 +21,7 @@ const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   box-sizing: border-box;
+  font-family: "Helvetica", Arial, sans-serif;
 
   @media (max-width: 768px) {
     padding: 15px;
