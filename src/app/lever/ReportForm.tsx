@@ -1,4 +1,3 @@
-// src/app/components/ReportForm.tsx
 import React from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
@@ -8,6 +7,7 @@ interface Rental {
   name: string;
   quantity: number;
   date: string;
+  location?: string; // Optional, added for consistency
 }
 
 interface ReportFormProps {
@@ -17,8 +17,80 @@ interface ReportFormProps {
   reportDetails: string;
   setReportDetails: (value: string) => void;
   handleReportSubmit: (e: React.FormEvent) => void;
+  selectedLocation: string; // New prop for location
+  setSelectedLocation: (value: string) => void; // New prop to update location
 }
 
+export const ReportForm: React.FC<ReportFormProps> = ({
+  userRentals,
+  selectedRental,
+  setSelectedRental,
+  reportDetails,
+  setReportDetails,
+  handleReportSubmit,
+  selectedLocation,
+  setSelectedLocation,
+}) => {
+  // Same locations array as LocationDetailClient
+  const locations = [
+    { id: 1, name: "Stabekk", lat: 59.90921845652782, lng: 10.611649286507243 },
+  ];
+
+  return (
+    <ReportFormContainer
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <FormTitle>Rapporter mistet eller ødelagt gjenstand</FormTitle>
+      <Form onSubmit={handleReportSubmit}>
+        <FormField>
+          <FormLabel>Velg utlån:</FormLabel>
+          <FormSelect
+            value={selectedRental}
+            onChange={(e) => setSelectedRental(e.target.value)}
+            required
+          >
+            <option value="">-- Velg en gjenstand --</option>
+            {userRentals.map((rental) => (
+              <option key={`${rental.itemId}-${rental.date}`} value={`${rental.itemId}-${rental.date}`}>
+                {rental.name} (Antall: {rental.quantity}, Utlånt: {new Date(rental.date).toLocaleDateString()})
+              </option>
+            ))}
+          </FormSelect>
+        </FormField>
+        <FormField>
+          <FormLabel>Lokasjon:</FormLabel>
+          <FormSelect
+            value={selectedLocation}
+            onChange={(e) => setSelectedLocation(e.target.value)}
+            required
+          >
+            <option value="">-- Velg en lokasjon --</option>
+            {locations.map((loc) => (
+              <option key={loc.id} value={loc.name}>
+                {loc.name}
+              </option>
+            ))}
+          </FormSelect>
+        </FormField>
+        <FormField>
+          <FormLabel>Detaljer:</FormLabel>
+          <FormTextarea
+            value={reportDetails}
+            onChange={(e) => setReportDetails(e.target.value)}
+            placeholder="Beskriv problemet (f.eks. gjenstand mistet, skadet del)"
+            required
+          />
+        </FormField>
+        <SubmitButton type="submit">Send inn rapport</SubmitButton>
+      </Form>
+    </ReportFormContainer>
+  );
+};
+
+// Styled Components (unchanged)
 const ReportFormContainer = styled(motion.div)`
   width: 100%;
   max-width: clamp(300px, 90vw, 800px); /* Responsive max-width */
@@ -114,50 +186,3 @@ const SubmitButton = styled.button`
     background: #cc3333;
   }
 `;
-
-export const ReportForm: React.FC<ReportFormProps> = ({
-  userRentals,
-  selectedRental,
-  setSelectedRental,
-  reportDetails,
-  setReportDetails,
-  handleReportSubmit,
-}) => {
-  return (
-    <ReportFormContainer
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <FormTitle>Rapporter mistet eller ødelagt gjenstand</FormTitle>
-      <Form onSubmit={handleReportSubmit}>
-        <FormField>
-          <FormLabel>Velg utlån:</FormLabel>
-          <FormSelect
-            value={selectedRental}
-            onChange={(e) => setSelectedRental(e.target.value)}
-            required
-          >
-            <option value="">-- Velg en gjenstand --</option>
-            {userRentals.map((rental) => (
-              <option key={`${rental.itemId}-${rental.date}`} value={`${rental.itemId}-${rental.date}`}>
-                {rental.name} (Antall: {rental.quantity}, Utlånt: {new Date(rental.date).toLocaleDateString()})
-              </option>
-            ))}
-          </FormSelect>
-        </FormField>
-        <FormField>
-          <FormLabel>Detaljer:</FormLabel>
-          <FormTextarea
-            value={reportDetails}
-            onChange={(e) => setReportDetails(e.target.value)}
-            placeholder="Beskriv problemet (f.eks. gjenstand mistet, skadet del)"
-            required
-          />
-        </FormField>
-        <SubmitButton type="submit">Send inn rapport</SubmitButton>
-      </Form>
-    </ReportFormContainer>
-  );
-};

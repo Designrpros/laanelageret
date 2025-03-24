@@ -1,4 +1,3 @@
-// src/app/adminPage/LostOrBroken.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -6,111 +5,22 @@ import styled from "styled-components";
 import { db } from "../../../firebase";
 import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
 
-// Interfaces (unchanged)
+// Interfaces (updated with location)
 interface Report {
-  id: string; userId: string; email: string; itemId: string; itemName: string; quantity: number;
-  dateRented: string; reportDetails: string; reportedAt: string; status: string;
+  id: string;
+  userId: string;
+  email: string;
+  itemId: string;
+  itemName: string;
+  quantity: number;
+  dateRented: string;
+  reportDetails: string;
+  reportedAt: string;
+  status: string;
+  location: string; // New field for store location
 }
 
-const LostOrBroken = () => {
-  const [reports, setReports] = useState<Report[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [openReportId, setOpenReportId] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "reports"), (snapshot) => {
-      const fetchedReports = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        userId: doc.data().userId,
-        email: doc.data().email,
-        itemId: doc.data().itemId,
-        itemName: doc.data().itemName,
-        quantity: doc.data().quantity,
-        dateRented: doc.data().dateRented,
-        reportDetails: doc.data().reportDetails,
-        reportedAt: doc.data().reportedAt,
-        status: doc.data().status,
-      }) as Report).sort((a, b) => new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime()); // Sort by reportedAt
-      setReports(fetchedReports);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const toggleReportDetails = (reportId: string) => {
-    setOpenReportId(openReportId === reportId ? null : reportId);
-  };
-
-  const filteredReports = useMemo(() => {
-    return reports.filter(
-      (report) =>
-        report.itemName.toLowerCase().includes(search.toLowerCase()) ||
-        report.email.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [reports, search]);
-
-  const handleResolve = async (reportId: string) => {
-    try {
-      const reportRef = doc(db, "reports", reportId);
-      await updateDoc(reportRef, { status: "resolved" });
-      alert("Report marked as resolved!");
-    } catch (error) {
-      console.error("Error resolving report:", error);
-      alert("Failed to resolve report.");
-    }
-  };
-
-  if (loading) return <Container><Title>Loading...</Title></Container>;
-
-  return (
-    <Container>
-      <Title>Lost or Broken Items</Title>
-      <SearchContainer>
-        <SearchInput
-          type="text"
-          placeholder="Search by item name or email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </SearchContainer>
-      {filteredReports.length > 0 ? (
-        <ReportList>
-          {filteredReports.map((report) => (
-            <ReportItem key={report.id}>
-              <ReportHeader onClick={() => toggleReportDetails(report.id)}>
-                <ReportTitle>{report.itemName} ({report.email})</ReportTitle>
-                <ToggleButton>{openReportId === report.id ? "−" : "+"}</ToggleButton>
-              </ReportHeader>
-              <ReportDetails isOpen={openReportId === report.id}>
-                <DetailList>
-                  <DetailItem>ID: {report.id}</DetailItem>
-                  <DetailItem>User ID: {report.userId}</DetailItem>
-                  <DetailItem>Item ID: {report.itemId}</DetailItem>
-                  <DetailItem>Qty: {report.quantity}</DetailItem>
-                  <DetailItem>Rented: {new Date(report.dateRented).toLocaleString()}</DetailItem>
-                  <DetailItem>Reported: {new Date(report.reportedAt).toLocaleString()}</DetailItem>
-                  <DetailItem>Issue: {report.reportDetails}</DetailItem>
-                </DetailList>
-                <StatusBadge $status={report.status}>{report.status}</StatusBadge>
-                {report.status === "pending" && (
-                  <ResolveButton onClick={() => handleResolve(report.id)}>Resolve</ResolveButton>
-                )}
-              </ReportDetails>
-            </ReportItem>
-          ))}
-        </ReportList>
-      ) : (
-        <p>No reported items found.</p>
-      )}
-    </Container>
-  );
-};
-
-export default LostOrBroken;
-
-
+// Styled Components (unchanged)
 const Container = styled.div`
   padding: clamp(10px, 2vw, 20px);
   font-family: "Helvetica", Arial, sans-serif;
@@ -258,3 +168,108 @@ const ResolveButton = styled.button`
     background: #333;
   }
 `;
+
+const LostOrBroken = () => {
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [openReportId, setOpenReportId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
+  // Same locations array as LocationDetailClient
+  const locations = [
+    { id: 1, name: "Stabekk", lat: 59.90921845652782, lng: 10.611649286507243 },
+  ];
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "reports"), (snapshot) => {
+      const fetchedReports = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        userId: doc.data().userId,
+        email: doc.data().email,
+        itemId: doc.data().itemId,
+        itemName: doc.data().itemName,
+        quantity: doc.data().quantity,
+        dateRented: doc.data().dateRented,
+        reportDetails: doc.data().reportDetails,
+        reportedAt: doc.data().reportedAt,
+        status: doc.data().status,
+        location: doc.data().location || "Stabekk", // Default to Stabekk if missing
+      }) as Report).sort((a, b) => new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime());
+      setReports(fetchedReports);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const toggleReportDetails = (reportId: string) => {
+    setOpenReportId(openReportId === reportId ? null : reportId);
+  };
+
+  const filteredReports = useMemo(() => {
+    return reports.filter(
+      (report) =>
+        report.itemName.toLowerCase().includes(search.toLowerCase()) ||
+        report.email.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [reports, search]);
+
+  const handleResolve = async (reportId: string) => {
+    try {
+      const reportRef = doc(db, "reports", reportId);
+      await updateDoc(reportRef, { status: "resolved" });
+      alert("Report marked as resolved!");
+    } catch (error) {
+      console.error("Error resolving report:", error);
+      alert("Failed to resolve report.");
+    }
+  };
+
+  if (loading) return <Container><Title>Loading...</Title></Container>;
+
+  return (
+    <Container>
+      <Title>Lost or Broken Items</Title>
+      <SearchContainer>
+        <SearchInput
+          type="text"
+          placeholder="Search by item name or email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </SearchContainer>
+      {filteredReports.length > 0 ? (
+        <ReportList>
+          {filteredReports.map((report) => (
+            <ReportItem key={report.id}>
+              <ReportHeader onClick={() => toggleReportDetails(report.id)}>
+                <ReportTitle>{report.itemName} ({report.email}) - {report.location}</ReportTitle>
+                <ToggleButton>{openReportId === report.id ? "−" : "+"}</ToggleButton>
+              </ReportHeader>
+              <ReportDetails isOpen={openReportId === report.id}>
+                <DetailList>
+                  <DetailItem>ID: {report.id}</DetailItem>
+                  <DetailItem>User ID: {report.userId}</DetailItem>
+                  <DetailItem>Item ID: {report.itemId}</DetailItem>
+                  <DetailItem>Qty: {report.quantity}</DetailItem>
+                  <DetailItem>Rented: {new Date(report.dateRented).toLocaleString()}</DetailItem>
+                  <DetailItem>Reported: {new Date(report.reportedAt).toLocaleString()}</DetailItem>
+                  <DetailItem>Issue: {report.reportDetails}</DetailItem>
+                  <DetailItem>Location: {report.location}</DetailItem>
+                </DetailList>
+                <StatusBadge $status={report.status}>{report.status}</StatusBadge>
+                {report.status === "pending" && (
+                  <ResolveButton onClick={() => handleResolve(report.id)}>Resolve</ResolveButton>
+                )}
+              </ReportDetails>
+            </ReportItem>
+          ))}
+        </ReportList>
+      ) : (
+        <p>No reported items found.</p>
+      )}
+    </Container>
+  );
+};
+
+export default LostOrBroken;

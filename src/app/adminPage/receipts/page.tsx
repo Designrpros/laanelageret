@@ -14,8 +14,10 @@ interface Receipt {
   quantity: number;
   date: string;
   type: "rental" | "return";
+  location: string; // Added location
 }
 
+// Styled Components (unchanged except ReceiptItem for readability)
 const Container = styled.div`
   background: #fff;
   padding: clamp(15px, 3vw, 30px);
@@ -26,7 +28,6 @@ const Container = styled.div`
   margin: 0 auto;
   box-sizing: border-box;
   font-family: "Helvetica", Arial, sans-serif;
-
 
   @media (max-width: 768px) {
     padding: 15px;
@@ -84,7 +85,12 @@ const EmptyMessage = styled.p`
 const Receipts = () => {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null); // Add error state
+  const [error, setError] = useState<string | null>(null);
+
+  // Same locations array for consistency
+  const locations = [
+    { id: 1, name: "Stabekk", lat: 59.90921845652782, lng: 10.611649286507243 },
+  ];
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -99,6 +105,7 @@ const Receipts = () => {
           quantity: doc.data().quantity,
           date: doc.data().date,
           type: doc.data().type,
+          location: doc.data().location || "Stabekk", // Default to Stabekk if missing
         })) as Receipt[];
         console.log("[Receipts] Fetched receipts:", fetchedReceipts);
         setReceipts(fetchedReceipts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
@@ -107,7 +114,7 @@ const Receipts = () => {
       (error) => {
         console.error("[Receipts] Error fetching receipts:", error);
         setError("Failed to load receipts: " + error.message);
-        setLoading(false); // Ensure loading clears even on error
+        setLoading(false);
       }
     );
     return () => unsubscribe();
@@ -125,7 +132,7 @@ const Receipts = () => {
             <ReceiptItem key={receipt.id} $type={receipt.type}>
               <ReceiptDetails>
                 {receipt.email} - {receipt.itemName} (Qty: {receipt.quantity}) -{" "}
-                {receipt.type === "rental" ? "Rented" : "Returned"}
+                {receipt.type === "rental" ? "Rented" : "Returned"} - {receipt.location}
               </ReceiptDetails>
               <ReceiptTimestamp>{new Date(receipt.date).toLocaleString()}</ReceiptTimestamp>
             </ReceiptItem>

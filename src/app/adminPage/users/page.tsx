@@ -6,12 +6,17 @@ import { db } from "../../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { CategoryFilterSection } from "../items/CategoryFilterSection"; // Adjust path as needed
 
-// Interfaces (unchanged)
-interface Rental { itemId: string; name: string; quantity: number; date: string; }
-interface CartItem { id: string; name: string; imageUrl: string; category: string; quantity: number; }
-interface UserData { id: string; email: string; rentals: Rental[]; cart?: { items: CartItem[] }; lastLogin?: string; createdAt?: string; }
+// Interfaces (updated, removed cart)
+interface Rental { itemId: string; name: string; quantity: number; date: string; location: string; }
+interface UserData { 
+  id: string; 
+  email: string; 
+  rentals: Rental[]; 
+  lastLogin?: string; 
+  createdAt?: string; 
+}
 
-// Styled Components (adjusted)
+// Styled Components (unchanged)
 const Container = styled.div`
   background: #fff;
   padding: clamp(15px, 3vw, 30px);
@@ -162,13 +167,20 @@ const Users = () => {
 
   const filterCategories = ["all", "active", "inactive"]; // Options for the picker
 
+  // Same locations array as LocationDetailClient
+  const locations = [
+    { id: 1, name: "Stabekk", lat: 59.90921845652782, lng: 10.611649286507243 },
+  ];
+
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
       const fetchedUsers = snapshot.docs.map((doc) => ({
         id: doc.id,
         email: doc.data().email || "Unknown",
-        rentals: doc.data().rentals || [],
-        cart: doc.data().cart || { items: [] },
+        rentals: (doc.data().rentals || []).map((rental: any) => ({
+          ...rental,
+          location: rental.location || "Stabekk", // Default to Stabekk if missing
+        })),
         lastLogin: doc.data().lastLogin || "",
         createdAt: doc.data().createdAt || "",
       }) as UserData).sort((a, b) => new Date(b.lastLogin || 0).getTime() - new Date(a.lastLogin || 0).getTime());
@@ -195,10 +207,6 @@ const Users = () => {
   }, [users, search, filter]);
 
   const totalRentals = filteredUsers.reduce((sum, user) => sum + user.rentals.length, 0);
-  const totalCartItems = filteredUsers.reduce(
-    (sum, user) => sum + (user.cart?.items || []).reduce((s, i) => s + i.quantity, 0),
-    0
-  );
 
   if (loading) return <Container><Title>Loading...</Title></Container>;
 
@@ -243,26 +251,12 @@ const Users = () => {
                           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                           .map((rental, idx) => (
                             <DetailItem key={idx}>
-                              {rental.name} (Qty: {rental.quantity}) - Rented on{" "}
+                              {rental.name} (Qty: {rental.quantity}) - {rental.location} - Rented on{" "}
                               {new Date(rental.date).toLocaleString()}
                             </DetailItem>
                           ))
                       ) : (
                         <EmptyMessage>No rentals</EmptyMessage>
-                      )}
-                    </DetailList>
-                  </DetailSection>
-                  <DetailSection>
-                    <SectionLabel>Cart ({user.cart?.items.length || 0})</SectionLabel>
-                    <DetailList>
-                      {user.cart?.items.length ? (
-                        user.cart.items.map((item, idx) => (
-                          <DetailItem key={idx}>
-                            {item.name} (Qty: {item.quantity})
-                          </DetailItem>
-                        ))
-                      ) : (
-                        <EmptyMessage>No items in cart</EmptyMessage>
                       )}
                     </DetailList>
                   </DetailSection>
@@ -280,7 +274,6 @@ const Users = () => {
           <Summary>
             <SummaryText>Total Users: {filteredUsers.length}</SummaryText>
             <SummaryText>Total Rentals: {totalRentals}</SummaryText>
-            <SummaryText>Total Cart Items: {totalCartItems}</SummaryText>
           </Summary>
         </>
       ) : (

@@ -11,7 +11,7 @@ interface UserEntry {
   email: string;
   createdAt: string;
   lastLogin: string;
-  rentals: { itemId: string; name: string; quantity: number; date: string }[];
+  rentals: { itemId: string; name: string; quantity: number; date: string; location: string }[];
 }
 
 interface ItemEntry {
@@ -29,6 +29,7 @@ interface ReportEntry {
   itemName: string;
   reportedAt: string;
   status: string;
+  location: string; // Added location
 }
 
 interface ReceiptEntry {
@@ -40,6 +41,7 @@ interface ReceiptEntry {
   quantity: number;
   date: string;
   type: "rental" | "return";
+  location: string; // Added location
 }
 
 interface HistoryEntry {
@@ -50,6 +52,7 @@ interface HistoryEntry {
   category: "user" | "item" | "rental" | "report";
 }
 
+// Styled Components (unchanged except HistoryItem)
 const HistoryContainer = styled.div`
   background: #fff;
   padding: clamp(15px, 3vw, 30px);
@@ -144,6 +147,11 @@ const History = () => {
 
   const filterCategories = ["all", "user", "item", "rental", "report"];
 
+  // Same locations array for consistency
+  const locations = [
+    { id: 1, name: "Stabekk", lat: 59.90921845652782, lng: 10.611649286507243 },
+  ];
+
   useEffect(() => {
     let errorOccurred = false;
 
@@ -155,7 +163,10 @@ const History = () => {
           email: doc.data().email || "Unknown",
           createdAt: doc.data().createdAt || "",
           lastLogin: doc.data().lastLogin || "",
-          rentals: doc.data().rentals || [],
+          rentals: (doc.data().rentals || []).map((r: any) => ({
+            ...r,
+            location: r.location || "Stabekk", // Default location
+          })),
         })) as UserEntry[];
         console.log("[History] Fetched users:", fetchedUsers);
         setUsers(fetchedUsers);
@@ -197,6 +208,7 @@ const History = () => {
           itemName: doc.data().itemName,
           reportedAt: doc.data().reportedAt,
           status: doc.data().status,
+          location: doc.data().location || "Stabekk", // Default location
         })) as ReportEntry[];
         console.log("[History] Fetched reports:", fetchedReports);
         setReports(fetchedReports);
@@ -220,6 +232,7 @@ const History = () => {
           quantity: doc.data().quantity,
           date: doc.data().date,
           type: doc.data().type,
+          location: doc.data().location || "Stabekk", // Default location
         })) as ReceiptEntry[];
         console.log("[History] Fetched receipts:", fetchedReceipts);
         setReceipts(fetchedReceipts);
@@ -279,7 +292,7 @@ const History = () => {
       entries.push({
         id: receipt.id,
         action: receipt.type === "rental" ? "Rental Started" : "Rental Returned",
-        details: `${receipt.email} ${receipt.type === "rental" ? "rented" : "returned"} ${receipt.itemName} (Qty: ${receipt.quantity})`,
+        details: `${receipt.email} ${receipt.type === "rental" ? "rented" : "returned"} ${receipt.itemName} (Qty: ${receipt.quantity}) - ${receipt.location}`,
         timestamp: receipt.date,
         category: "rental",
       });
@@ -289,7 +302,7 @@ const History = () => {
       entries.push({
         id: report.id,
         action: `Report (${report.status})`,
-        details: `${report.email} reported ${report.itemName}`,
+        details: `${report.email} reported ${report.itemName} - ${report.location}`,
         timestamp: report.reportedAt,
         category: "report",
       });

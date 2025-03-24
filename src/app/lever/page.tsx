@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { db, auth } from "../../firebase";
-import { doc, getDoc, updateDoc, setDoc, collection, onSnapshot, addDoc } from "firebase/firestore"; // Added addDoc
+import { doc, getDoc, updateDoc, setDoc, collection, onSnapshot, addDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { ReportForm } from "./ReportForm";
 
@@ -13,6 +13,7 @@ interface Rental {
   name: string;
   quantity: number;
   date: string;
+  location?: string; // Optional, added for consistency
 }
 
 interface Item {
@@ -30,14 +31,13 @@ interface UserData {
   rentals: Rental[];
 }
 
-// Styled components (unchanged, omitted for brevity)
-
 const Lever = () => {
   const [userRentals, setUserRentals] = useState<Rental[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRental, setSelectedRental] = useState<string>("");
   const [reportDetails, setReportDetails] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState("Stabekk"); // New state for location
   const [isFormOpen, setIsFormOpen] = useState(false);
   const router = useRouter();
 
@@ -121,7 +121,6 @@ const Lever = () => {
           rented: newRented,
           inStock: newInStock,
         });
-        // Log rental return
         await logRentalReturn(user.uid, user.email || "Unknown", rental.itemId, rental.name, rental.quantity);
       }
 
@@ -163,11 +162,13 @@ const Lever = () => {
         reportDetails,
         reportedAt: new Date().toISOString(),
         status: "pending",
+        location: selectedLocation, // Include selected location
       });
 
       alert("Rapport sendt inn!");
       setSelectedRental("");
       setReportDetails("");
+      setSelectedLocation("Stabekk"); // Reset to default
       setIsFormOpen(false);
     } catch (error) {
       console.error("Report submission error:", error);
@@ -229,6 +230,8 @@ const Lever = () => {
               reportDetails={reportDetails}
               setReportDetails={setReportDetails}
               handleReportSubmit={handleReportSubmit}
+              selectedLocation={selectedLocation} // Pass new prop
+              setSelectedLocation={setSelectedLocation} // Pass new prop
             />
           )}
         </AnimatePresence>
@@ -239,7 +242,7 @@ const Lever = () => {
 
 export default Lever;
 
-
+// Styled components (unchanged)
 const LeverContainer = styled.div`
   min-height: 100vh;
   padding: 1rem;
