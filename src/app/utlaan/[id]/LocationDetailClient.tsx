@@ -257,8 +257,6 @@ const LocationDetailClient = ({ id }: { id: string }) => {
   );
 };
 
-export default LocationDetailClient;
-
 // Styled components
 const Container = styled.div`
   display: flex;
@@ -490,3 +488,5 @@ const CheckoutButton = styled.button<{ as?: "a" }>`
     background: #333;
   }
 `;
+
+export default LocationDetailClient;
