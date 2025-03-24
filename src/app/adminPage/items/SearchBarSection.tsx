@@ -10,19 +10,18 @@ const SearchContainer = styled.div`
   margin-bottom: 20px;
   width: 100%;
   max-width: 600px; /* Center and cap width */
-  flex-wrap: wrap;
   justify-content: center;
   box-sizing: border-box;
 
   @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: nowrap; /* Prevent wrapping to new line */
+    padding: 0 10px; /* Add side padding to prevent edge clipping */
   }
 `;
 
 const SearchBar = styled.input`
-  flex: 1;
-  min-width: 0;
+  flex: 1; /* Take available space */
+  min-width: 0; /* Allow shrinking */
   padding: clamp(8px, 1.5vw, 12px);
   font-size: clamp(14px, 2vw, 16px);
   border-radius: 8px;
@@ -39,7 +38,8 @@ const SearchBar = styled.input`
   }
 
   @media (max-width: 768px) {
-    width: 100%;
+    flex: 1; /* Still take available space */
+    min-width: 100px; /* Minimum width to stay usable */
   }
 `;
 
@@ -56,6 +56,7 @@ const AddButton = styled.button`
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   transition: background 0.3s ease;
+  flex-shrink: 0; /* Prevent buttons from shrinking */
 
   &:hover {
     background: #333;
