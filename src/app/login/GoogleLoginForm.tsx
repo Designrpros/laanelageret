@@ -1,9 +1,8 @@
-// src/app/login/GoogleLoginForm.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
+import { signInWithPopup, signInWithCredential, signOut, onAuthStateChanged, GoogleAuthProvider } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, googleProvider, db } from "../../firebase";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -16,69 +15,69 @@ const GoogleLoginForm = () => {
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/";
 
+  // Check if running in iOS WKWebView
+  const isIOSWebView = typeof window !== "undefined" && /iPhone|iPad|iPod/.test(navigator.userAgent) && window.webkit?.messageHandlers;
+
   useEffect(() => {
-    // Listen for Firebase auth state (web)
-    const unsubscribeFirebase = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        console.log("User signed in (Firebase):", currentUser.email, "UID:", currentUser.uid);
-        setUser(currentUser);
-        await updateFirestoreUser(currentUser);
-        router.push(returnTo); // Redirect after successful login
+    // Listen for native iOS auth response
+    const handleNativeAuth = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail?.idToken && detail?.accessToken) {
+        const credential = GoogleAuthProvider.credential(detail.idToken, detail.accessToken);
+        signInWithCredential(auth, credential)
+          .then((result) => {
+            console.log("Signed in with native credential:", result.user.email);
+            // onAuthStateChanged will handle redirect
+          })
+          .catch((err) => {
+            console.error("Error with native credential:", err);
+            setError(getFirebaseErrorMessage(err));
+          });
+      }
+    };
+
+    window.addEventListener("authState", handleNativeAuth as EventListener);
+    return () => window.removeEventListener("authState", handleNativeAuth as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUser(user);
+        try {
+          const userRef = doc(db, "users", user.uid);
+          await setDoc(
+            userRef,
+            {
+              email: user.email,
+              createdAt: user.metadata.creationTime || new Date().toISOString(),
+              lastLogin: new Date().toISOString(),
+              rentals: [],
+              cart: { items: [] },
+            },
+            { merge: true }
+          );
+          console.log("User document updated in Firestore:", user.uid);
+        } catch (err) {
+          console.error("Error updating Firestore:", err);
+        }
+        router.push(returnTo);
       } else {
         setUser(null);
       }
     });
-
-    // Listen for iOS bridge auth state
-    const handleAuthState = (event: any) => {
-      const authData = event.detail;
-      if (authData?.email && authData?.token) {
-        console.log("Auth state received from iOS:", authData.email);
-        setUser({ email: authData.email, token: authData.token });
-        // Optionally, redirect without Firebase if iOS handles auth fully
-        router.push(returnTo);
-      }
-    };
-    window.addEventListener("authState", handleAuthState);
-
-    return () => {
-      unsubscribeFirebase();
-      window.removeEventListener("authState", handleAuthState);
-    };
+    return () => unsubscribe();
   }, [router, returnTo]);
 
-  const updateFirestoreUser = async (currentUser: any) => {
-    try {
-      const userRef = doc(db, "users", currentUser.uid);
-      await setDoc(
-        userRef,
-        {
-          email: currentUser.email,
-          createdAt: currentUser.metadata.creationTime || new Date().toISOString(),
-          lastLogin: new Date().toISOString(),
-          rentals: [],
-          cart: { items: [] },
-        },
-        { merge: true }
-      );
-      console.log("User document updated in Firestore:", currentUser.uid);
-    } catch (err) {
-      console.error("Error updating user in Firestore:", err);
-    }
-  };
-
   const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
-
-      // Check if running in iOS WKWebView
-      if (window.webkit?.messageHandlers?.signIn) {
-        console.log("Triggering native Google login via iOS bridge");
-        window.webkit.messageHandlers.signIn.postMessage("google");
+      if (isIOSWebView) {
+        // Trigger native iOS login
+        window.webkit?.messageHandlers.signIn.postMessage({ action: "googleSignIn" });
       } else {
-        // Fallback to Firebase popup for web
-        console.log("Using Firebase signInWithPopup for web");
+        // Web-based sign-in
         const result = await signInWithPopup(auth, googleProvider);
         console.log("Google sign-in successful:", result.user.email);
       }
@@ -94,8 +93,6 @@ const GoogleLoginForm = () => {
     try {
       setLoading(true);
       await signOut(auth);
-      console.log("User signed out");
-      setUser(null);
       router.push("/login");
     } catch (error: any) {
       console.error("Sign out error:", error);
@@ -107,40 +104,37 @@ const GoogleLoginForm = () => {
 
   const getFirebaseErrorMessage = (error: any): string => {
     switch (error.code) {
-      case "auth/popup-closed-by-user":
-        return "Sign-in popup closed. Please try again.";
-      case "auth/network-request-failed":
-        return "Network error. Check your connection and try again.";
-      case "auth/too-many-requests":
-        return "Too many attempts. Try again later.";
-      default:
-        return `Error: ${error.message}`;
+      case "auth/popup-closed-by-user": return "Sign-in popup closed.";
+      case "auth/network-request-failed": return "Network error.";
+      case "auth/too-many-requests": return "Too many attempts.";
+      default: return `Error: ${error.message}`;
     }
   };
 
+  if (user) {
+    return (
+      <FormContainer>
+        <WelcomeMessage>Welcome, {user.email}!</WelcomeMessage>
+        <Button onClick={handleSignOut} disabled={loading}>
+          {loading ? "Signing out..." : "Sign Out"}
+        </Button>
+      </FormContainer>
+    );
+  }
+
   return (
     <FormContainer>
-      {user ? (
-        <>
-          <WelcomeMessage>Welcome, {user.email}!</WelcomeMessage>
-          <Button onClick={handleSignOut} disabled={loading}>
-            {loading ? "Signing out..." : "Sign Out"}
-          </Button>
-        </>
-      ) : (
-        <>
-          <Title>User Login</Title>
-          <Button onClick={handleGoogleSignIn} disabled={loading}>
-            {loading ? "Signing in..." : "Sign in with Google"}
-          </Button>
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-        </>
-      )}
+      <Title>User Login</Title>
+      <Button onClick={handleGoogleSignIn} disabled={loading}>
+        {loading ? "Signing in..." : "Sign in with Google"}
+      </Button>
+      {error && <ErrorMessage>{error}</ErrorMessage>}
     </FormContainer>
   );
 };
 
 export default GoogleLoginForm;
+
 
 // Styled components (unchanged)
 const FormContainer = styled.div`
@@ -195,4 +189,3 @@ const ErrorMessage = styled.div`
   font-size: 0.875rem;
   text-align: center;
 `;
-
