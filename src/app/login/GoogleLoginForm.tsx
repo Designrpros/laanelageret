@@ -1,11 +1,10 @@
-// src/app/components/GoogleLoginForm.tsx (adjust path as needed)
 "use client";
 
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore"; // Add Firestore imports
-import { auth, googleProvider, db } from "../../firebase"; // Ensure db is imported
+import { doc, setDoc } from "firebase/firestore";
+import { auth, googleProvider, db } from "../../firebase";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const GoogleLoginForm = () => {
@@ -16,40 +15,36 @@ const GoogleLoginForm = () => {
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/";
 
-  // Sync auth state and update Firestore
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        console.log("User signed in:", user.email, "UID:", user.uid);
-        setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        console.log("User signed in:", currentUser.email, "UID:", currentUser.uid);
+        setUser(currentUser);
 
         // Update Firestore with user data
         try {
-          const userRef = doc(db, "users", user.uid);
+          const userRef = doc(db, "users", currentUser.uid);
           await setDoc(
             userRef,
             {
-              email: user.email,
-              createdAt: user.metadata.creationTime || new Date().toISOString(),
+              email: currentUser.email,
+              createdAt: currentUser.metadata.creationTime || new Date().toISOString(),
               lastLogin: new Date().toISOString(),
               rentals: [], // Initialize empty rentals if not present
               cart: { items: [] }, // Initialize empty cart
             },
-            { merge: true } // Merge to avoid overwriting existing data
+            { merge: true }
           );
-          console.log("User document updated in Firestore:", user.uid);
+          console.log("User document updated in Firestore:", currentUser.uid);
         } catch (err) {
           console.error("Error updating user in Firestore:", err);
         }
-
-        // Redirect after sign-in if needed
-        router.push(returnTo);
       } else {
         setUser(null);
       }
     });
     return () => unsubscribe();
-  }, [router, returnTo]);
+  }, []); // Removed router and returnTo from dependencies to prevent constant redirect
 
   const handleGoogleSignIn = async () => {
     try {
@@ -57,7 +52,7 @@ const GoogleLoginForm = () => {
       setError(null);
       const result = await signInWithPopup(auth, googleProvider);
       console.log("Google sign-in successful:", result.user.email);
-      // Firestore update happens in onAuthStateChanged
+      router.push(returnTo); // Redirect only on successful sign-in
     } catch (error: any) {
       console.error("Google sign-in error:", error);
       setError(getFirebaseErrorMessage(error));
@@ -71,7 +66,8 @@ const GoogleLoginForm = () => {
       setLoading(true);
       await signOut(auth);
       console.log("User signed out");
-      router.push("/login");
+      setUser(null); // Clear user state
+      router.push("/login"); // Redirect to login page after sign-out
     } catch (error: any) {
       console.error("Sign out error:", error);
       setError("Error signing out. Please try again.");
@@ -93,24 +89,24 @@ const GoogleLoginForm = () => {
     }
   };
 
-  if (user) {
-    return (
-      <FormContainer>
-        <WelcomeMessage>Welcome, {user.email}!</WelcomeMessage>
-        <Button onClick={handleSignOut} disabled={loading}>
-          {loading ? "Signing out..." : "Sign Out"}
-        </Button>
-      </FormContainer>
-    );
-  }
-
   return (
     <FormContainer>
-      <Title>User Login</Title>
-      <Button onClick={handleGoogleSignIn} disabled={loading}>
-        {loading ? "Signing in..." : "Sign in with Google"}
-      </Button>
-      {error && <ErrorMessage>{error}</ErrorMessage>}
+      {user ? (
+        <>
+          <WelcomeMessage>Welcome, {user.email}!</WelcomeMessage>
+          <Button onClick={handleSignOut} disabled={loading}>
+            {loading ? "Signing out..." : "Sign Out"}
+          </Button>
+        </>
+      ) : (
+        <>
+          <Title>User Login</Title>
+          <Button onClick={handleGoogleSignIn} disabled={loading}>
+            {loading ? "Signing in..." : "Sign in with Google"}
+          </Button>
+          {error && <ErrorMessage>{error}</ErrorMessage>}
+        </>
+      )}
     </FormContainer>
   );
 };
@@ -170,3 +166,4 @@ const ErrorMessage = styled.div`
   font-size: 0.875rem;
   text-align: center;
 `;
+

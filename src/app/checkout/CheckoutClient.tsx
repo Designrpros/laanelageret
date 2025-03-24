@@ -21,13 +21,13 @@ interface CartItem {
   id: string;
   name: string;
   imageUrl: string;
-  category: string;
+  category: string; // Ensure category is included
   quantity: number;
 }
 
 interface UserData {
   email: string;
-  rentals: { itemId: string; name: string; quantity: number; date: string }[];
+  rentals: { itemId: string; name: string; quantity: number; date: string; category: string }[]; // Add category to rentals
 }
 
 const CheckoutContainer = styled.div`
@@ -37,7 +37,7 @@ const CheckoutContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center; /* Center vertically */
+  justify-content: center;
 `;
 
 const ContentWrapper = styled.div`
@@ -66,7 +66,7 @@ const CartList = styled.div`
   gap: clamp(0.75rem, 2vw, 1rem);
 
   @media (max-width: 480px) {
-    gap: 0.5rem; /* Tighter spacing on small screens */
+    gap: 0.5rem;
   }
 `;
 
@@ -80,7 +80,7 @@ const CartItem = styled.div`
   gap: clamp(0.5rem, 1.5vw, 1rem);
 
   @media (max-width: 480px) {
-    flex-direction: column; /* Stack items vertically on small screens */
+    flex-direction: column;
     align-items: flex-start;
   }
 `;
@@ -96,7 +96,7 @@ const CartItemDetails = styled.div`
   flex-grow: 1;
 
   @media (max-width: 480px) {
-    width: 100%; /* Full width on small screens */
+    width: 100%;
   }
 `;
 
@@ -119,7 +119,7 @@ const QuantityControls = styled.div`
   gap: clamp(0.25rem, 1vw, 0.5rem);
 
   @media (max-width: 480px) {
-    margin-top: 0.5rem; /* Space above controls on small screens */
+    margin-top: 0.5rem;
   }
 `;
 
@@ -166,8 +166,8 @@ const RemoveButton = styled.button`
   }
 
   @media (max-width: 480px) {
-    margin-top: 0.5rem; /* Space above button on small screens */
-    width: 100%; /* Full width for better tap target */
+    margin-top: 0.5rem;
+    width: 100%;
   }
 `;
 
@@ -181,8 +181,8 @@ const ConfirmButton = styled.button`
   border-radius: 8px;
   font-size: clamp(1rem, 2vw, 1.25rem);
   cursor: pointer;
-  margin: clamp(1.5rem, 3vw, 2rem) auto 0; /* Center horizontally */
-  display: block; /* Ensure block behavior */
+  margin: clamp(1.5rem, 3vw, 2rem) auto 0;
+  display: block;
   transition: background 0.3s ease;
 
   &:hover {
@@ -200,7 +200,7 @@ const LoginButton = styled.button`
   border-radius: 8px;
   font-size: clamp(1rem, 2vw, 1.25rem);
   cursor: pointer;
-  margin: clamp(1rem, 2vw, 1.5rem) auto 0; /* Center horizontally */
+  margin: clamp(1rem, 2vw, 1.5rem) auto 0;
   display: block;
   transition: background 0.3s ease;
 
@@ -220,7 +220,11 @@ const CheckoutClient = () => {
 
   useEffect(() => {
     const savedCart = localStorage.getItem("cart");
-    if (savedCart) setCart(JSON.parse(savedCart));
+    if (savedCart) {
+      const parsedCart = JSON.parse(savedCart);
+      setCart(parsedCart);
+      console.log("Loaded cart from localStorage:", parsedCart); // Debug
+    }
 
     if (auth.currentUser) {
       const userCartRef = doc(db, "users", auth.currentUser.uid, "cart", "current");
@@ -229,6 +233,7 @@ const CheckoutClient = () => {
           const firestoreCart = doc.data().items || [];
           setCart(firestoreCart);
           localStorage.setItem("cart", JSON.stringify(firestoreCart));
+          console.log("Loaded cart from Firestore:", firestoreCart); // Debug
         }
       });
     }
@@ -239,12 +244,13 @@ const CheckoutClient = () => {
         const fetchedItems = snapshot.docs.map((doc) => ({
           id: doc.id,
           name: doc.data().name,
-          imageUrl: doc.data().imageUrl,
+          imageUrl: doc.data().imageUrl || "/placeholder-image.jpg",
           category: doc.data().category || "Ukjent",
           rented: doc.data().rented || 0,
           inStock: doc.data().inStock || 0,
         })) as Item[];
         setItems(fetchedItems);
+        console.log("Fetched items:", fetchedItems); // Debug
         setLoading(false);
       },
       (error) => {
@@ -296,7 +302,10 @@ const CheckoutClient = () => {
         name: cartItem.name,
         quantity: cartItem.quantity,
         date: new Date().toISOString(),
+        category: items.find((i) => i.id === cartItem.id)?.category || "Ukjent", // Dynamic category
       }));
+      console.log("New rentals to save:", newRentals); // Debug
+
       await setDoc(
         userRef,
         {
@@ -312,7 +321,7 @@ const CheckoutClient = () => {
       setCart([]);
 
       alert("Utlån bekreftet!");
-      router.push(returnTo);
+      router.push("/lever"); // Redirect to Lever page after checkout
     } catch (error) {
       console.error("Utlånsfeil:", error);
       alert("Kunne ikke bekrefte utlån. Prøv igjen.");
@@ -355,7 +364,7 @@ const CheckoutClient = () => {
                     <CartItemImage src={item.imageUrl} alt={item.name} />
                     <CartItemDetails>
                       <CartItemName>{item.name}</CartItemName>
-                      <CartItemCategory>Kategori: {item.category}</CartItemCategory>
+                      <CartItemCategory>Kategori: {stockItem?.category || "Ukjent"}</CartItemCategory>
                       <QuantityControls>
                         <QuantityButton
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
