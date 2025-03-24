@@ -1,7 +1,6 @@
 // src/app/utlaan/[id]/page.tsx
 import LocationDetailClient from "./LocationDetailClient";
 
-// Define static params for export
 export function generateStaticParams() {
   const locations = [{ id: "1" }]; // Stabekk - add more IDs if needed
   return locations.map((location) => ({
@@ -9,7 +8,8 @@ export function generateStaticParams() {
   }));
 }
 
-// Synchronous Server Component
-export default function Page({ params }: { params: { id: string } }) {
-  return <LocationDetailClient id={params.id} />;
+// Explicitly handle params as a Promise for TypeScript
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  return <LocationDetailClient id={resolvedParams.id} />;
 }
