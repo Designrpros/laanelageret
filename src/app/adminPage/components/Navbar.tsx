@@ -15,106 +15,78 @@ import ReceiptOutlinedIcon from "@mui/icons-material/ReceiptOutlined";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import HistoryIcon from "@mui/icons-material/History";
-import MenuIcon from "@mui/icons-material/Menu";
 
-const Nav = styled.nav<{ $isOpen: boolean }>`
+const Nav = styled.nav`
   background: #ffffff;
-  padding: 10px 20px;
+  padding: 10px 0; /* Reduced vertical padding */
   position: fixed;
-  bottom: 0; /* Moved to bottom */
+  bottom: 0;
   left: 0;
   right: 0;
   z-index: 1000;
   display: flex;
-  justify-content: center; /* Center tabs */
+  justify-content: center;
   align-items: center;
-  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1); /* Shadow on top */
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
   font-family: "Helvetica", Arial, sans-serif;
-  height: 60px; /* Fixed height for tab bar */
+  height: 60px;
 `;
 
-const NavList = styled.ul<{ $isOpen: boolean }>`
+const NavList = styled.ul`
   list-style: none;
   display: flex;
   margin: 0;
-  padding: 0;
+  padding: 0 10px; /* Side padding for scroll area */
   width: 100%;
-  max-width: 1200px; /* Match content width */
-  justify-content: space-around; /* Spread tabs evenly */
+  max-width: 1200px;
+  justify-content: space-around; /* Default for desktop */
 
   @media (max-width: 768px) {
-    flex-direction: column;
-    position: fixed; /* Fixed for dropdown */
-    bottom: 60px; /* Position above navbar when open */
-    left: 0;
-    width: 200px;
-    background: #ffffff;
-    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
-    display: ${({ $isOpen }) => ($isOpen ? "flex" : "none")};
-    align-items: flex-start;
+    flex-direction: row; /* Keep horizontal */
+    overflow-x: auto; /* Enable horizontal scroll */
+    white-space: nowrap; /* Prevent wrapping */
+    justify-content: flex-start; /* Align left for scrolling */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    scrollbar-width: none; /* Hide scrollbar (Firefox) */
+    &::-webkit-scrollbar {
+      display: none; /* Hide scrollbar (Chrome/Safari) */
+    }
   }
 `;
 
 const NavItem = styled.li<{ $isActive: boolean }>`
   padding: 10px 20px;
-  color: ${({ $isActive }) => ($isActive ? "#1a1a1a" : "#666")}; /* Darker active text */
+  color: ${({ $isActive }) => ($isActive ? "#1a1a1a" : "#666")};
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
   font-weight: ${({ $isActive }) => ($isActive ? "bold" : "normal")};
-  background: ${({ $isActive }) => ($isActive ? "#f0f0f0" : "transparent")}; /* Active tab background */
-  border-top: ${({ $isActive }) => ($isActive ? "2px solid #1a1a1a" : "none")}; /* Tab indicator */
-  flex: 1; /* Equal width for tabs */
-  justify-content: center; /* Center content */
+  background: ${({ $isActive }) => ($isActive ? "#f0f0f0" : "transparent")};
+  border-top: ${({ $isActive }) => ($isActive ? "2px solid #1a1a1a" : "none")};
+  flex: 1; /* Equal width on desktop */
+  justify-content: center;
   text-align: center;
   transition: background 0.3s ease, color 0.3s ease;
 
   &:hover {
-    background: #f5f5f5; /* Lighter hover */
+    background: #f5f5f5;
   }
 
   @media (max-width: 768px) {
-    width: 100%;
-    justify-content: flex-start; /* Left-align in mobile menu */
-    border-top: none; /* No tab indicator in mobile menu */
-    background: ${({ $isActive }) => ($isActive ? "#f0f0f0" : "#fff")};
-  }
-`;
-
-const Hamburger = styled.button`
-  display: none;
-  background: none;
-  border: none;
-  color: #333;
-  cursor: pointer;
-  position: absolute;
-  right: 20px; /* Align to right */
-
-  @media (max-width: 768px) {
-    display: block;
-  }
-
-  svg {
-    font-size: 28px;
+    flex: none; /* Fixed width for scrolling */
+    min-width: 120px; /* Ensure tabs are readable */
+    justify-content: center; /* Center text/icons in scroll */
+    border-top: ${({ $isActive }) => ($isActive ? "2px solid #1a1a1a" : "none")}; /* Keep tab indicator */
   }
 `;
 
 export default function Navbar() {
   const { activeTab, onTabChange } = useAdminContext();
-  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-
-  const toggleMenu = () => {
-    console.log(`[Navbar] Toggling menu: ${!isMenuOpen}`);
-    setIsMenuOpen((prev) => !prev);
-  };
 
   return (
-    <Nav $isOpen={isMenuOpen}>
-      <Hamburger onClick={toggleMenu}>
-        <MenuIcon />
-      </Hamburger>
-      <NavList $isOpen={isMenuOpen}>
+    <Nav>
+      <NavList>
         <NavItem
           $isActive={activeTab === "home"}
           onClick={() => onTabChange("home")}
