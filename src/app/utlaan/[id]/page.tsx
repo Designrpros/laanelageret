@@ -1,14 +1,15 @@
 // src/app/utlaan/[id]/page.tsx
-import { NextPage } from "next";
 import LocationDetailClient from "./LocationDetailClient";
 
-// Use NextPage with explicit params as Promise
-const Page: NextPage<{
-  params: Promise<{ id: string }>;
-  searchParams: { [key: string]: string | string[] | undefined };
-}> = async ({ params }) => {
-  const resolvedParams = await params; // Resolve the Promise
-  return <LocationDetailClient id={resolvedParams.id} />;
-};
+// Define static params for export
+export function generateStaticParams() {
+  const locations = [{ id: "1" }]; // Stabekk - add more IDs if needed
+  return locations.map((location) => ({
+    id: location.id,
+  }));
+}
 
-export default Page;
+// Synchronous Server Component
+export default function Page({ params }: { params: { id: string } }) {
+  return <LocationDetailClient id={params.id} />;
+}
