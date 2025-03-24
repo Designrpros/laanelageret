@@ -163,20 +163,29 @@ const Lever = () => {
       return;
     }
 
-    const fetchUserData = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const userRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userRef);
-        if (userDoc.exists()) {
-          setUserRentals((userDoc.data() as UserData).rentals || []);
-        }
+    const user = auth.currentUser;
+    const userRef = doc(db, "users", user.uid);
+
+    // Real-time listener for user rentals with debugging
+    const unsubscribeUser = onSnapshot(userRef, (doc) => {
+      if (doc.exists()) {
+        const data = doc.data() as UserData;
+        console.log("User data from Firestore:", data); // Debug: Check what’s fetched
+        const rentals = data.rentals || [];
+        console.log("Rentals array:", rentals); // Debug: Check rentals specifically
+        setUserRentals(rentals);
+      } else {
+        console.log("User document does not exist"); // Debug: No user doc
+        setUserRentals([]);
       }
-    };
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching user rentals:", error);
+      setLoading(false);
+    });
 
-    fetchUserData();
-
-    const unsubscribe = onSnapshot(collection(db, "items"), (snapshot) => {
+    // Real-time listener for items
+    const unsubscribeItems = onSnapshot(collection(db, "items"), (snapshot) => {
       const fetchedItems = snapshot.docs.map((doc) => ({
         id: doc.id,
         name: doc.data().name,
@@ -186,14 +195,16 @@ const Lever = () => {
         rented: doc.data().rented || 0,
         inStock: doc.data().inStock || 0,
       })) as Item[];
+      console.log("Fetched items:", fetchedItems); // Debug: Check items
       setItems(fetchedItems);
-      setLoading(false);
     }, (error) => {
       console.error("Error fetching items:", error);
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeUser();
+      unsubscribeItems();
+    };
   }, [router]);
 
   const handleReturn = async (rental: Rental) => {
@@ -204,16 +215,22 @@ const Lever = () => {
       const itemRef = doc(db, "items", rental.itemId);
       const item = items.find((i) => i.id === rental.itemId);
       if (item) {
+        const newRented = Math.max(0, item.rented - rental.quantity);
+        const newInStock = item.inStock + rental.quantity;
+        console.log(`Returning ${rental.name}: rented=${newRented}, inStock=${newInStock}`); // Debug
         await updateDoc(itemRef, {
-          rented: item.rented - rental.quantity,
-          inStock: item.inStock + rental.quantity,
+          rented: newRented,
+          inStock: newInStock,
         });
       }
 
       const userRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userRef);
       const currentRentals = (userDoc.data() as UserData).rentals || [];
-      const updatedRentals = currentRentals.filter((r) => r.itemId !== rental.itemId || r.date !== rental.date);
+      const updatedRentals = currentRentals.filter(
+        (r) => r.itemId !== rental.itemId || r.date !== rental.date
+      );
+      console.log("Updated rentals after return:", updatedRentals); // Debug
 
       await setDoc(userRef, { rentals: updatedRentals }, { merge: true });
 

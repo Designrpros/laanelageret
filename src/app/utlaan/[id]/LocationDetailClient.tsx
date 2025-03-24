@@ -19,8 +19,6 @@ interface Item {
   imageUrl: string;
   rented: number;
   inStock: number;
-  description?: string;
-  gallery?: string[];
   location: string;
 }
 
@@ -35,7 +33,6 @@ const LocationDetailClient = ({ id }: { id: string }) => {
   const locationId = parseInt(id, 10);
   const [items, setItems] = useState<Item[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMapHovered, setIsMapHovered] = useState(false);
@@ -75,8 +72,6 @@ const LocationDetailClient = ({ id }: { id: string }) => {
           imageUrl: doc.data().imageUrl,
           rented: doc.data().rented || 0,
           inStock: doc.data().inStock || 0,
-          description: doc.data().description || "Ingen beskrivelse tilgjengelig.",
-          gallery: doc.data().gallery || [doc.data().imageUrl],
           location: doc.data().location || "Unknown",
         })) as Item[];
         setItems(fetchedItems);
@@ -138,20 +133,10 @@ const LocationDetailClient = ({ id }: { id: string }) => {
     setCart((prev) => prev.filter((item) => item.id !== itemId));
   };
 
-  const toggleFlip = (itemId: string) => {
-    setFlippedCards((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) newSet.delete(itemId);
-      else newSet.add(itemId);
-      return newSet;
-    });
-  };
-
   const handleCheckout = () => {
     if (auth.currentUser) {
       router.push(`/checkout?returnTo=/utlaan/${locationId}`);
     }
-    // No else clause; "Login to Checkout" button handles unauthenticated case
   };
 
   if (!selectedLocation) return <div>Location not found</div>;
@@ -198,58 +183,35 @@ const LocationDetailClient = ({ id }: { id: string }) => {
               filteredItems.map((item, index) => (
                 <StoreItemCard
                   key={item.id}
-                  onClick={() => toggleFlip(item.id)}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: index * 0.2 }}
                 >
-                  <CardInner
-                    animate={{ rotateY: flippedCards.has(item.id) ? 180 : 0 }}
-                    transition={{ duration: 0.5 }}
+                  <ItemImage src={item.imageUrl} alt={item.name} />
+                  <ItemContent>
+                    <ItemName>{item.name}</ItemName>
+                    <ItemCategory>
+                      {item.category}
+                      {item.subcategory ? ` - ${item.subcategory}` : ""}
+                    </ItemCategory>
+                  </ItemContent>
+                  <StockBadge>
+                    {item.rented}/{item.inStock}
+                  </StockBadge>
+                  <BorrowIconWrapper
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addToCart(item);
+                    }}
+                    onMouseEnter={() => setIsBorrowHovered(item.id)}
+                    onMouseLeave={() => setIsBorrowHovered(null)}
                   >
-                    <CardFront>
-                      <ItemImage src={item.imageUrl} alt={item.name} />
-                      <ItemContent>
-                        <ItemName>{item.name}</ItemName>
-                        <ItemCategory>
-                          {item.category}
-                          {item.subcategory ? ` - ${item.subcategory}` : ""}
-                        </ItemCategory>
-                      </ItemContent>
-                      <StockBadge>
-                        {item.rented}/{item.inStock}
-                      </StockBadge>
-                      <BorrowIconWrapper
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addToCart(item);
-                        }}
-                        onMouseEnter={() => setIsBorrowHovered(item.id)}
-                        onMouseLeave={() => setIsBorrowHovered(null)}
-                      >
-                        {isBorrowHovered === item.id ? (
-                          <ShoppingCartIcon />
-                        ) : (
-                          <ShoppingCartOutlinedIcon />
-                        )}
-                      </BorrowIconWrapper>
-                    </CardFront>
-                    <CardBack>
-                      <BackContent>
-                        <ItemName>{item.name}</ItemName>
-                        <ItemCategory>
-                          {item.category}
-                          {item.subcategory ? ` - ${item.subcategory}` : ""}
-                        </ItemCategory>
-                        <Description>{item.description}</Description>
-                        <Gallery>
-                          {item.gallery?.map((url, idx) => (
-                            <GalleryImage key={idx} src={url} alt={`${item.name} ${idx}`} />
-                          ))}
-                        </Gallery>
-                      </BackContent>
-                    </CardBack>
-                  </CardInner>
+                    {isBorrowHovered === item.id ? (
+                      <ShoppingCartIcon />
+                    ) : (
+                      <ShoppingCartOutlinedIcon />
+                    )}
+                  </BorrowIconWrapper>
                 </StoreItemCard>
               ))
             ) : (
@@ -386,10 +348,8 @@ const StoreItemCard = styled(motion.div)`
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  height: clamp(250px, 40vw, 300px);
+  height: clamp(250px, 40vw, 350px);
   position: relative;
-  perspective: 1000px;
-  cursor: pointer;
   transition: transform 0.3s ease;
 
   &:hover {
@@ -397,39 +357,9 @@ const StoreItemCard = styled(motion.div)`
   }
 `;
 
-const CardInner = styled(motion.div)`
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transform-style: preserve-3d;
-`;
-
-const CardFront = styled.div`
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-`;
-
-const CardBack = styled.div`
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  transform: rotateY(180deg);
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border-radius: 12px;
-  padding: clamp(1rem, 2vw, 1.5rem);
-  overflow-y: auto;
-`;
-
 const ItemImage = styled.img`
   width: 100%;
-  height: 60%;
+  height: 60%; /* Kept from original front side */
   object-fit: cover;
 `;
 
@@ -475,32 +405,6 @@ const BorrowIconWrapper = styled.div`
   color: #1a1a1a;
   cursor: pointer;
   transition: all 0.3s ease;
-`;
-
-const BackContent = styled.div`
-  text-align: left;
-  color: #333;
-`;
-
-const Description = styled.p`
-  font-size: clamp(0.8rem, 1.5vw, 0.9rem);
-  margin: 0.5rem 0;
-  max-height: 80px;
-  overflow-y: auto;
-`;
-
-const Gallery = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
-  padding-top: 0.5rem;
-`;
-
-const GalleryImage = styled.img`
-  width: clamp(60px, 15vw, 80px);
-  height: clamp(60px, 15vw, 80px);
-  object-fit: cover;
-  border-radius: 4px;
 `;
 
 const CartModal = styled(motion.div)`
