@@ -7,8 +7,9 @@ import Home from "./home/page";
 import Users from "./users/page";
 import Items from "./items/page";
 import LostOrBroken from "./lost-or-broken/page";
-import Receipts from "./receipts/page"; // New import
+import Receipts from "./receipts/page";
 import History from "./history/page";
+import Analytics from "./analytics/page"; // New import
 import styled from "styled-components";
 
 const LayoutWrapper = styled.div`
@@ -25,11 +26,11 @@ const ContentWrapper = styled.main`
   padding: clamp(10px, 2vw, 20px);
   width: 100%;
   max-width: 100vw;
-  margin: 60px auto 0;
+  margin: 0 auto 60px; /* Bottom margin for navbar */
   box-sizing: border-box;
 
   @media (max-width: 768px) {
-    margin-top: 70px;
+    margin-bottom: 70px;
     padding: 10px;
   }
 `;
@@ -48,10 +49,12 @@ const AdminContent = () => {
         return <Items />;
       case "lost-or-broken":
         return <LostOrBroken />;
-      case "receipts": // Add Receipts case
+      case "receipts":
         return <Receipts />;
       case "history":
         return <History />;
+      case "analytics":
+        return <Analytics />;
       default:
         return <div>Invalid tab: {activeTab}</div>;
     }

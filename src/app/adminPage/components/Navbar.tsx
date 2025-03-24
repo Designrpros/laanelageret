@@ -15,10 +15,12 @@ import ReceiptOutlinedIcon from "@mui/icons-material/ReceiptOutlined";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import HistoryIcon from "@mui/icons-material/History";
+import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined"; // New icon
+import AnalyticsIcon from "@mui/icons-material/Analytics"; // Filled icon
 
 const Nav = styled.nav`
   background: #ffffff;
-  padding: 10px 0; /* Reduced vertical padding */
+  padding: 10px 0;
   position: fixed;
   bottom: 0;
   left: 0;
@@ -36,20 +38,20 @@ const NavList = styled.ul`
   list-style: none;
   display: flex;
   margin: 0;
-  padding: 0 10px; /* Side padding for scroll area */
+  padding: 0 10px;
   width: 100%;
   max-width: 1200px;
-  justify-content: space-around; /* Default for desktop */
+  justify-content: space-around;
 
   @media (max-width: 768px) {
-    flex-direction: row; /* Keep horizontal */
-    overflow-x: auto; /* Enable horizontal scroll */
-    white-space: nowrap; /* Prevent wrapping */
-    justify-content: flex-start; /* Align left for scrolling */
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-    scrollbar-width: none; /* Hide scrollbar (Firefox) */
+    flex-direction: row;
+    overflow-x: auto;
+    white-space: nowrap;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     &::-webkit-scrollbar {
-      display: none; /* Hide scrollbar (Chrome/Safari) */
+      display: none;
     }
   }
 `;
@@ -64,7 +66,7 @@ const NavItem = styled.li<{ $isActive: boolean }>`
   font-weight: ${({ $isActive }) => ($isActive ? "bold" : "normal")};
   background: ${({ $isActive }) => ($isActive ? "#f0f0f0" : "transparent")};
   border-top: ${({ $isActive }) => ($isActive ? "2px solid #1a1a1a" : "none")};
-  flex: 1; /* Equal width on desktop */
+  flex: 1;
   justify-content: center;
   text-align: center;
   transition: background 0.3s ease, color 0.3s ease;
@@ -74,10 +76,10 @@ const NavItem = styled.li<{ $isActive: boolean }>`
   }
 
   @media (max-width: 768px) {
-    flex: none; /* Fixed width for scrolling */
-    min-width: 120px; /* Ensure tabs are readable */
-    justify-content: center; /* Center text/icons in scroll */
-    border-top: ${({ $isActive }) => ($isActive ? "2px solid #1a1a1a" : "none")}; /* Keep tab indicator */
+    flex: none;
+    min-width: 120px;
+    justify-content: center;
+    border-top: ${({ $isActive }) => ($isActive ? "2px solid #1a1a1a" : "none")};
   }
 `;
 
@@ -128,6 +130,13 @@ export default function Navbar() {
         >
           {activeTab === "history" ? <HistoryIcon /> : <HistoryOutlinedIcon />}
           History
+        </NavItem>
+        <NavItem
+          $isActive={activeTab === "analytics"}
+          onClick={() => onTabChange("analytics")}
+        >
+          {activeTab === "analytics" ? <AnalyticsIcon /> : <AnalyticsOutlinedIcon />}
+          Analytics
         </NavItem>
       </NavList>
     </Nav>
