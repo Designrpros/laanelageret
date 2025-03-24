@@ -21,16 +21,16 @@ const Nav = styled.nav<{ $isOpen: boolean }>`
   background: #ffffff;
   padding: 10px 20px;
   position: fixed;
-  top: 0;
+  bottom: 0; /* Moved to bottom */
   left: 0;
   right: 0;
   z-index: 1000;
   display: flex;
-  justify-content: space-between;
+  justify-content: center; /* Center tabs */
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1); /* Shadow on top */
   font-family: "Helvetica", Arial, sans-serif;
-
+  height: 60px; /* Fixed height for tab bar */
 `;
 
 const NavList = styled.ul<{ $isOpen: boolean }>`
@@ -38,15 +38,18 @@ const NavList = styled.ul<{ $isOpen: boolean }>`
   display: flex;
   margin: 0;
   padding: 0;
+  width: 100%;
+  max-width: 1200px; /* Match content width */
+  justify-content: space-around; /* Spread tabs evenly */
 
   @media (max-width: 768px) {
     flex-direction: column;
-    position: absolute;
-    top: 60px;
+    position: fixed; /* Fixed for dropdown */
+    bottom: 60px; /* Position above navbar when open */
     left: 0;
     width: 200px;
     background: #ffffff;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
     display: ${({ $isOpen }) => ($isOpen ? "flex" : "none")};
     align-items: flex-start;
   }
@@ -54,20 +57,28 @@ const NavList = styled.ul<{ $isOpen: boolean }>`
 
 const NavItem = styled.li<{ $isActive: boolean }>`
   padding: 10px 20px;
-  color: ${({ $isActive }) => ($isActive ? "#333" : "#333")};
+  color: ${({ $isActive }) => ($isActive ? "#1a1a1a" : "#666")}; /* Darker active text */
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
   font-weight: ${({ $isActive }) => ($isActive ? "bold" : "normal")};
+  background: ${({ $isActive }) => ($isActive ? "#f0f0f0" : "transparent")}; /* Active tab background */
+  border-top: ${({ $isActive }) => ($isActive ? "2px solid #1a1a1a" : "none")}; /* Tab indicator */
+  flex: 1; /* Equal width for tabs */
+  justify-content: center; /* Center content */
+  text-align: center;
+  transition: background 0.3s ease, color 0.3s ease;
 
   &:hover {
-    background: #f0f0f0;
+    background: #f5f5f5; /* Lighter hover */
   }
 
   @media (max-width: 768px) {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: flex-start; /* Left-align in mobile menu */
+    border-top: none; /* No tab indicator in mobile menu */
+    background: ${({ $isActive }) => ($isActive ? "#f0f0f0" : "#fff")};
   }
 `;
 
@@ -77,6 +88,8 @@ const Hamburger = styled.button`
   border: none;
   color: #333;
   cursor: pointer;
+  position: absolute;
+  right: 20px; /* Align to right */
 
   @media (max-width: 768px) {
     display: block;
