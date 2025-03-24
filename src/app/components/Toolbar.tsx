@@ -1,25 +1,26 @@
-// src/app/components/Toolbar.tsx
 "use client";
 
 import React, { useState } from "react";
 import styled from "styled-components";
 import Link from "next/link";
+import { usePathname } from "next/navigation"; // To detect admin page
 
 interface ToolbarProps {
   activeTab: string;
   onTabChange?: (tab: string) => void;
 }
 
-const Navbar = styled.nav`
+const Navbar = styled.nav<{ $isAdmin: boolean; $isRevealed: boolean }>`
   position: fixed;
   top: 20px;
-  right: 20px;
+  right: ${({ $isAdmin, $isRevealed }) => ($isAdmin && !$isRevealed ? "-45px" : "20px")}; /* Partially hidden on admin */
   z-index: 1200;
   display: flex;
   align-items: center;
   padding: 10px;
   background: #000; /* Black background */
   border-radius: 8px; /* Slight rounding for aesthetics */
+  transition: right 0.3s ease; /* Smooth slide */
 `;
 
 interface BurgerIconProps {
@@ -125,9 +126,23 @@ const MenuItem = styled.a<{ $isActive: boolean }>`
 
 const Toolbar: React.FC<ToolbarProps> = ({ activeTab, onTabChange }) => {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [isRevealed, setIsRevealed] = useState<boolean>(false); // New state for revealing
+  const pathname = usePathname(); // Detect current route
+  const isAdminPage = pathname?.startsWith("/adminPage") || false; // Check if on admin page, with fallback
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+  const handleBurgerClick = () => {
+    if (isAdminPage) {
+      if (!isRevealed) {
+        setIsRevealed(true); // First click reveals
+      } else if (!isMenuOpen) {
+        setIsMenuOpen(true); // Second click opens menu
+      } else {
+        setIsMenuOpen(false); // Close menu if open
+        setIsRevealed(false); // Slide back after closing
+      }
+    } else {
+      setIsMenuOpen(!isMenuOpen); // Non-admin: toggle menu directly
+    }
   };
 
   const handleTabClick = (tab: string) => {
@@ -135,12 +150,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ activeTab, onTabChange }) => {
       onTabChange(tab);
     }
     setIsMenuOpen(false);
+    if (isAdminPage) {
+      setIsRevealed(false); // Reset to hidden on admin page
+    }
   };
 
   return (
     <>
-      <Navbar>
-        <BurgerIcon onClick={toggleMenu} $isOpen={isMenuOpen}>
+      <Navbar $isAdmin={isAdminPage} $isRevealed={isRevealed}>
+        <BurgerIcon onClick={handleBurgerClick} $isOpen={isMenuOpen}>
           <div />
           <div />
           <div />

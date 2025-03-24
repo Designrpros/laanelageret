@@ -91,7 +91,7 @@ const Analytics = () => {
 
   const timeChartData = () => {
     const last30Days = new Date();
-    last30Days.setDate(last30Days.getDate() - 30);
+    last30Days.setDate(last30Days.getDate() - 29); // Start 29 days ago to include today (30 days total)
     
     const dates = Array.from({ length: 30 }, (_, i) => {
       const date = new Date(last30Days);
@@ -100,33 +100,38 @@ const Analytics = () => {
     });
 
     const rentalsByDate = dates.map((date) => {
-      return receipts.filter(
-        (r) => r.type === "rental" && r.date.startsWith(date)
-      ).length;
+      return receipts.filter((r) => r.type === "rental" && r.date.startsWith(date)).length;
     });
 
     const returnsByDate = dates.map((date) => {
-      return receipts.filter(
-        (r) => r.type === "return" && r.date.startsWith(date)
-      ).length;
+      return receipts.filter((r) => r.type === "return" && r.date.startsWith(date)).length;
     });
 
     return {
       labels: dates,
       datasets: [
+        { label: "Rentals", data: rentalsByDate, borderColor: "#ff6384", backgroundColor: "rgba(255, 99, 132, 0.2)", fill: true },
+        { label: "Returns", data: returnsByDate, borderColor: "#36a2eb", backgroundColor: "rgba(54, 162, 235, 0.2)", fill: true },
+      ],
+    };
+  };
+
+  const userChartData = () => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const activeUsers = users.filter((u) =>
+      receipts.some((r) => r.userId === u.id && new Date(r.date) >= thirtyDaysAgo)
+    ).length;
+    const inactiveUsers = users.length - activeUsers;
+
+    return {
+      labels: ["Active Users (Last 30 Days)", "Inactive Users"],
+      datasets: [
         {
-          label: "Rentals",
-          data: rentalsByDate,
-          borderColor: "#ff6384",
-          backgroundColor: "rgba(255, 99, 132, 0.2)",
-          fill: true,
-        },
-        {
-          label: "Returns",
-          data: returnsByDate,
-          borderColor: "#36a2eb",
-          backgroundColor: "rgba(54, 162, 235, 0.2)",
-          fill: true,
+          data: [activeUsers, inactiveUsers],
+          backgroundColor: ["#ffcd56", "#e0e0e0"],
+          borderColor: ["#ffcd56", "#e0e0e0"],
+          borderWidth: 1,
         },
       ],
     };
@@ -166,25 +171,6 @@ const Analytics = () => {
     };
   };
 
-  const userChartData = () => {
-    const activeUsers = users.filter((u) =>
-      receipts.some((r) => r.userId === u.id)
-    ).length;
-    const inactiveUsers = users.length - activeUsers;
-
-    return {
-      labels: ["Active Users", "Inactive Users"],
-      datasets: [
-        {
-          data: [activeUsers, inactiveUsers],
-          backgroundColor: ["#ffcd56", "#e0e0e0"],
-          borderColor: ["#ffcd56", "#e0e0e0"],
-          borderWidth: 1,
-        },
-      ],
-    };
-  };
-
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -202,8 +188,9 @@ const Analytics = () => {
 
   return (
     <AnalyticsContainer>
-      <Title>Analytics</Title>
-
+     
+     <Title>Analytics</Title>
+     
       <ChartWrapper>
         <h2>Rentals and Returns Over Time (Last 30 Days)</h2>
         <div style={{ height: "300px" }}>
