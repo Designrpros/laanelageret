@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import Link from "next/link";
-import { usePathname } from "next/navigation"; // To detect admin page
+import { usePathname } from "next/navigation";
 
 interface ToolbarProps {
   activeTab: string;
@@ -13,14 +13,14 @@ interface ToolbarProps {
 const Navbar = styled.nav<{ $isAdmin: boolean; $isRevealed: boolean }>`
   position: fixed;
   top: 20px;
-  right: ${({ $isAdmin, $isRevealed }) => ($isAdmin && !$isRevealed ? "-45px" : "20px")}; /* Partially hidden on admin */
+  right: ${({ $isAdmin, $isRevealed }) => ($isAdmin && !$isRevealed ? "-45px" : "20px")};
   z-index: 1200;
   display: flex;
   align-items: center;
   padding: 10px;
-  background: #000; /* Black background */
-  border-radius: 8px; /* Slight rounding for aesthetics */
-  transition: right 0.3s ease; /* Smooth slide */
+  background: #000;
+  border-radius: 8px;
+  transition: right 0.3s ease;
 `;
 
 interface BurgerIconProps {
@@ -38,7 +38,7 @@ const BurgerIcon = styled.div<BurgerIconProps>`
   div {
     width: 35px;
     height: 4px;
-    background-color: #fff; /* White bars */
+    background-color: #fff;
     border-radius: 2px;
     transition: all 0.3s ease;
   }
@@ -72,12 +72,8 @@ const Menu = styled.div<{ $isMenuOpen: boolean }>`
   animation: fadeIn 0.3s ease-in-out;
 
   @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 `;
 
@@ -125,34 +121,28 @@ const MenuItem = styled.a<{ $isActive: boolean }>`
 `;
 
 const Toolbar: React.FC<ToolbarProps> = ({ activeTab, onTabChange }) => {
-  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
-  const [isRevealed, setIsRevealed] = useState<boolean>(false); // New state for revealing
-  const pathname = usePathname(); // Detect current route
-  const isAdminPage = pathname?.startsWith("/adminPage") || false; // Check if on admin page, with fallback
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isRevealed, setIsRevealed] = useState(false);
+  const pathname = usePathname();
+  const isAdminPage = pathname?.startsWith("/adminPage") || false;
 
   const handleBurgerClick = () => {
     if (isAdminPage) {
       if (!isRevealed) {
-        setIsRevealed(true); // First click reveals
-      } else if (!isMenuOpen) {
-        setIsMenuOpen(true); // Second click opens menu
+        setIsRevealed(true); // Reveal navbar
       } else {
-        setIsMenuOpen(false); // Close menu if open
-        setIsRevealed(false); // Slide back after closing
+        setIsMenuOpen(!isMenuOpen); // Toggle menu
+        if (isMenuOpen) setIsRevealed(false); // Hide navbar when closing
       }
     } else {
-      setIsMenuOpen(!isMenuOpen); // Non-admin: toggle menu directly
+      setIsMenuOpen(!isMenuOpen); // Direct toggle on non-admin pages
     }
   };
 
   const handleTabClick = (tab: string) => {
-    if (onTabChange) {
-      onTabChange(tab);
-    }
+    onTabChange?.(tab);
     setIsMenuOpen(false);
-    if (isAdminPage) {
-      setIsRevealed(false); // Reset to hidden on admin page
-    }
+    if (isAdminPage) setIsRevealed(false); // Reset on admin page navigation
   };
 
   return (

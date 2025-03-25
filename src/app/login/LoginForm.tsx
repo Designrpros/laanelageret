@@ -107,9 +107,16 @@ const GoogleButton = styled(Button)`
 const WelcomeMessage = styled.div`
   font-size: 1.25rem;
   font-weight: 500;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem; /* Reduced to fit note */
   text-align: center;
   color: #1a1a1a;
+`;
+
+const LogoutNote = styled.p`
+  font-size: 0.875rem;
+  color: #666;
+  text-align: center;
+  margin-bottom: 1.5rem;
 `;
 
 const ErrorMessage = styled.div`
@@ -310,6 +317,9 @@ const LoginForm = () => {
       {user ? (
         <>
           <WelcomeMessage>Welcome, {user.email}!</WelcomeMessage>
+          <LogoutNote>
+            Dine utlån hos Låne Lageret venter på deg når du logger inn igjen.
+          </LogoutNote>
           <Button onClick={handleSignOut} disabled={loading}>
             {loading ? "Signing out..." : "Sign Out"}
           </Button>
