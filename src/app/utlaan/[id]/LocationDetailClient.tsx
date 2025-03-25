@@ -139,6 +139,12 @@ const LocationDetailClient = ({ id }: { id: string }) => {
     }
   };
 
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      setIsCartOpen(false);
+    }
+  };
+
   if (!selectedLocation) return <div>Location not found</div>;
 
   return (
@@ -221,37 +227,40 @@ const LocationDetailClient = ({ id }: { id: string }) => {
         )}
       </LeftPanel>
       {isCartOpen && (
-        <CartModal
-          initial={{ x: "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "100%" }}
-          transition={{ duration: 0.3 }}
-        >
-          <CartTitle>Your Cart</CartTitle>
-          {cart.length > 0 ? (
-            <>
-              {cart.map((item) => (
-                <CartItem key={item.id}>
-                  <CartItemImage src={item.imageUrl} alt={item.name} />
-                  <CartItemDetails>
-                    <CartItemName>{item.name}</CartItemName>
-                    <CartItemQuantity>Quantity: {item.quantity}</CartItemQuantity>
-                  </CartItemDetails>
-                  <RemoveButton onClick={() => removeFromCart(item.id)}>Remove</RemoveButton>
-                </CartItem>
-              ))}
-              {auth.currentUser ? (
-                <CheckoutButton onClick={handleCheckout}>Proceed to Checkout</CheckoutButton>
-              ) : (
-                <CheckoutButton as="a" href={`/login?returnTo=/utlaan/${locationId}`}>
-                  Log in to Checkout
-                </CheckoutButton>
-              )}
-            </>
-          ) : (
-            <p>Your cart is empty.</p>
-          )}
-        </CartModal>
+        <Backdrop onClick={handleBackdropClick}>
+          <CartModal
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ duration: 0.3 }}
+            onClick={(e) => e.stopPropagation()} // Prevent clicks inside modal from closing it
+          >
+            <CartTitle>Your Cart</CartTitle>
+            {cart.length > 0 ? (
+              <>
+                {cart.map((item) => (
+                  <CartItem key={item.id}>
+                    <CartItemImage src={item.imageUrl} alt={item.name} />
+                    <CartItemDetails>
+                      <CartItemName>{item.name}</CartItemName>
+                      <CartItemQuantity>Quantity: {item.quantity}</CartItemQuantity>
+                    </CartItemDetails>
+                    <RemoveButton onClick={() => removeFromCart(item.id)}>Remove</RemoveButton>
+                  </CartItem>
+                ))}
+                {auth.currentUser ? (
+                  <CheckoutButton onClick={handleCheckout}>Proceed to Checkout</CheckoutButton>
+                ) : (
+                  <CheckoutButton as="a" href={`/login?returnTo=/utlaan/${locationId}`}>
+                    Log in to Checkout
+                  </CheckoutButton>
+                )}
+              </>
+            ) : (
+              <p>Your cart is empty.</p>
+            )}
+          </CartModal>
+        </Backdrop>
       )}
     </Container>
   );
@@ -359,7 +368,7 @@ const StoreItemCard = styled(motion.div)`
 
 const ItemImage = styled.img`
   width: 100%;
-  height: 60%; /* Kept from original front side */
+  height: 60%;
   object-fit: cover;
 `;
 
@@ -405,6 +414,16 @@ const BorrowIconWrapper = styled.div`
   color: #1a1a1a;
   cursor: pointer;
   transition: all 0.3s ease;
+`;
+
+const Backdrop = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.2); /* Semi-transparent overlay */
+  z-index: 999; /* Below CartModal but above content */
 `;
 
 const CartModal = styled(motion.div)`
