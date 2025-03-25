@@ -78,10 +78,10 @@ const ChartWrapper = styled.div`
 const ChartContainer = styled.div`
   position: relative;
   width: 100%;
-  height: clamp(200px, 50vh, 300px); /* Scales between 200px and 300px based on viewport height */
+  height: clamp(200px, 50vh, 300px);
 
   @media (max-width: 768px) {
-    height: clamp(150px, 40vh, 250px); /* Smaller range for mobile */
+    height: clamp(150px, 40vh, 250px);
   }
 `;
 
@@ -90,8 +90,10 @@ const Analytics = () => {
   const [items, setItems] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chartOptions, setChartOptions] = useState<any>(null); // Dynamic options
 
   useEffect(() => {
+    // Firestore subscriptions
     const unsubReceipts = onSnapshot(collection(db, "receipts"), (snapshot) => {
       setReceipts(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
     });
@@ -103,6 +105,63 @@ const Analytics = () => {
       setLoading(false);
     });
 
+    // Set initial chart options and update on resize
+    const updateChartOptions = () => {
+      const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
+      setChartOptions({
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "top" as const,
+            labels: {
+              font: {
+                size: isMobile ? 12 : 14,
+              },
+            },
+          },
+          tooltip: { enabled: true },
+        },
+        scales: {
+          x: {
+            display: true,
+            ticks: {
+              autoSkip: true,
+              maxTicksLimit: isMobile ? 10 : 30,
+              maxRotation: isMobile ? 45 : 0,
+              minRotation: isMobile ? 45 : 0,
+              font: {
+                size: isMobile ? 10 : 12,
+              },
+            },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              font: {
+                size: isMobile ? 10 : 12,
+              },
+            },
+          },
+        },
+      });
+    };
+
+    // Initial call
+    updateChartOptions();
+
+    // Resize listener
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", updateChartOptions);
+      return () => {
+        window.removeEventListener("resize", updateChartOptions);
+        unsubReceipts();
+        unsubItems();
+        unsubUsers();
+      };
+    }
+
+    // Cleanup for server-side or no-window scenarios
     return () => {
       unsubReceipts();
       unsubItems();
@@ -112,7 +171,7 @@ const Analytics = () => {
 
   const timeChartData = () => {
     const last30Days = new Date();
-    last30Days.setDate(last30Days.getDate() - 29); // 30 days total
+    last30Days.setDate(last30Days.getDate() - 29);
 
     const dates = Array.from({ length: 30 }, (_, i) => {
       const date = new Date(last30Days);
@@ -192,45 +251,7 @@ const Analytics = () => {
     };
   };
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { 
-        position: "top" as const,
-        labels: {
-          font: {
-            size: window.innerWidth <= 768 ? 12 : 14, // Smaller on mobile
-          },
-        },
-      },
-      tooltip: { enabled: true },
-    },
-    scales: {
-      x: { 
-        display: true, 
-        ticks: { 
-          autoSkip: true, 
-          maxTicksLimit: window.innerWidth <= 768 ? 10 : 30, // Fewer ticks on mobile
-          maxRotation: window.innerWidth <= 768 ? 45 : 0, // Rotate labels on mobile
-          minRotation: window.innerWidth <= 768 ? 45 : 0,
-          font: {
-            size: window.innerWidth <= 768 ? 10 : 12, // Smaller font on mobile
-          },
-        },
-      },
-      y: { 
-        beginAtZero: true,
-        ticks: {
-          font: {
-            size: window.innerWidth <= 768 ? 10 : 12,
-          },
-        },
-      },
-    },
-  };
-
-  if (loading) return <AnalyticsContainer><Title>Loading...</Title></AnalyticsContainer>;
+  if (loading || !chartOptions) return <AnalyticsContainer><Title>Loading...</Title></AnalyticsContainer>;
 
   return (
     <AnalyticsContainer>
