@@ -15,12 +15,12 @@ import ReceiptOutlinedIcon from "@mui/icons-material/ReceiptOutlined";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import HistoryIcon from "@mui/icons-material/History";
-import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined"; // New icon
-import AnalyticsIcon from "@mui/icons-material/Analytics"; // Filled icon
+import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
+import AnalyticsIcon from "@mui/icons-material/Analytics";
 
 const Nav = styled.nav`
   background: #ffffff;
-  padding: 10px 0;
+  padding: 8px 0; /* Slightly slimmer */
   position: fixed;
   bottom: 0;
   left: 0;
@@ -31,7 +31,7 @@ const Nav = styled.nav`
   align-items: center;
   box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
   font-family: "Helvetica", Arial, sans-serif;
-  height: 60px;
+  height: 56px; /* Slimmer than 60px */
 `;
 
 const NavList = styled.ul`
@@ -57,29 +57,52 @@ const NavList = styled.ul`
 `;
 
 const NavItem = styled.li<{ $isActive: boolean }>`
-  padding: 10px 20px;
+  padding: 8px 16px; /* Slimmer padding */
   color: ${({ $isActive }) => ($isActive ? "#1a1a1a" : "#666")};
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: ${({ $isActive }) => ($isActive ? "bold" : "normal")};
-  background: ${({ $isActive }) => ($isActive ? "#f0f0f0" : "transparent")};
-  border-top: ${({ $isActive }) => ($isActive ? "2px solid #1a1a1a" : "none")};
+  gap: 6px; /* Slightly smaller gap */
+  font-size: clamp(12px, 2vw, 14px); /* Slimmer, responsive text */
+  font-weight: ${({ $isActive }) => ($isActive ? "600" : "400")};
+  position: relative; /* For underline effect */
   flex: 1;
   justify-content: center;
   text-align: center;
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: color 0.2s ease, transform 0.2s ease;
+
+  /* Icon styling */
+  svg {
+    font-size: clamp(18px, 3vw, 20px); /* Smaller icons */
+  }
+
+  /* Active underline effect */
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: -4px; /* Below the nav bar */
+    left: 50%;
+    transform: translateX(-50%);
+    width: ${({ $isActive }) => ($isActive ? "60%" : "0")};
+    height: 2px;
+    background: #1a1a1a;
+    border-radius: 2px;
+    transition: width 0.2s ease;
+  }
 
   &:hover {
-    background: #f5f5f5;
+    color: #333;
+    transform: translateY(-1px); /* Subtle lift on hover */
+  }
+
+  &:hover::after {
+    width: 40%; /* Slight underline on hover when not active */
   }
 
   @media (max-width: 768px) {
     flex: none;
-    min-width: 120px;
-    justify-content: center;
-    border-top: ${({ $isActive }) => ($isActive ? "2px solid #1a1a1a" : "none")};
+    min-width: 100px; /* Slightly slimmer min-width */
+    padding: 6px 12px; /* Even slimmer on mobile */
   }
 `;
 

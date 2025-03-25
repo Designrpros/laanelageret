@@ -6,30 +6,30 @@ import { db } from "../../../firebase"; // Adjust path if needed
 import { collection, onSnapshot } from "firebase/firestore";
 import { Line, Bar, Pie } from "react-chartjs-2";
 import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
-    ArcElement,
-    Title as ChartTitle, // Renamed to avoid conflict
-    Tooltip,
-    Legend,
-  } from "chart.js";
-  
-  // Register Chart.js components
-  ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
-    ArcElement,
-    ChartTitle, // Use renamed import
-    Tooltip,
-    Legend
-  );
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title as ChartTitle,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  ChartTitle,
+  Tooltip,
+  Legend
+);
 
 const AnalyticsContainer = styled.div`
   background: #fff;
@@ -43,7 +43,7 @@ const AnalyticsContainer = styled.div`
   font-family: "Helvetica", Arial, sans-serif;
 
   @media (max-width: 768px) {
-    padding: 15px;
+    padding: 10px;
   }
 `;
 
@@ -56,12 +56,33 @@ const Title = styled.h1`
 `;
 
 const ChartWrapper = styled.div`
-  margin-bottom: 30px;
-  padding: 20px;
+  margin-bottom: clamp(20px, 4vw, 30px);
+  padding: clamp(10px, 2vw, 20px);
   background: #f9f9f9;
   border-radius: 8px;
   max-width: 100%;
   overflow-x: auto;
+
+  h2 {
+    font-size: clamp(16px, 3vw, 20px);
+    margin-bottom: clamp(10px, 2vw, 15px);
+    text-align: center;
+    color: #1a1a1a;
+  }
+
+  @media (max-width: 768px) {
+    padding: 10px;
+  }
+`;
+
+const ChartContainer = styled.div`
+  position: relative;
+  width: 100%;
+  height: clamp(200px, 50vh, 300px); /* Scales between 200px and 300px based on viewport height */
+
+  @media (max-width: 768px) {
+    height: clamp(150px, 40vh, 250px); /* Smaller range for mobile */
+  }
 `;
 
 const Analytics = () => {
@@ -91,8 +112,8 @@ const Analytics = () => {
 
   const timeChartData = () => {
     const last30Days = new Date();
-    last30Days.setDate(last30Days.getDate() - 29); // Start 29 days ago to include today (30 days total)
-    
+    last30Days.setDate(last30Days.getDate() - 29); // 30 days total
+
     const dates = Array.from({ length: 30 }, (_, i) => {
       const date = new Date(last30Days);
       date.setDate(date.getDate() + i);
@@ -175,12 +196,37 @@ const Analytics = () => {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { position: "top" as const },
+      legend: { 
+        position: "top" as const,
+        labels: {
+          font: {
+            size: window.innerWidth <= 768 ? 12 : 14, // Smaller on mobile
+          },
+        },
+      },
       tooltip: { enabled: true },
     },
     scales: {
-      x: { display: true, ticks: { autoSkip: false } },
-      y: { beginAtZero: true },
+      x: { 
+        display: true, 
+        ticks: { 
+          autoSkip: true, 
+          maxTicksLimit: window.innerWidth <= 768 ? 10 : 30, // Fewer ticks on mobile
+          maxRotation: window.innerWidth <= 768 ? 45 : 0, // Rotate labels on mobile
+          minRotation: window.innerWidth <= 768 ? 45 : 0,
+          font: {
+            size: window.innerWidth <= 768 ? 10 : 12, // Smaller font on mobile
+          },
+        },
+      },
+      y: { 
+        beginAtZero: true,
+        ticks: {
+          font: {
+            size: window.innerWidth <= 768 ? 10 : 12,
+          },
+        },
+      },
     },
   };
 
@@ -188,28 +234,27 @@ const Analytics = () => {
 
   return (
     <AnalyticsContainer>
-     
-     <Title>Analytics</Title>
-     
+      <Title>Analytics</Title>
+
       <ChartWrapper>
         <h2>Rentals and Returns Over Time (Last 30 Days)</h2>
-        <div style={{ height: "300px" }}>
+        <ChartContainer>
           <Line data={timeChartData()} options={chartOptions} />
-        </div>
+        </ChartContainer>
       </ChartWrapper>
 
       <ChartWrapper>
         <h2>Top 5 Most-Rented Items</h2>
-        <div style={{ height: "300px" }}>
+        <ChartContainer>
           <Bar data={itemChartData()} options={chartOptions} />
-        </div>
+        </ChartContainer>
       </ChartWrapper>
 
       <ChartWrapper>
         <h2>User Activity</h2>
-        <div style={{ height: "300px", maxWidth: "400px", margin: "0 auto" }}>
+        <ChartContainer>
           <Pie data={userChartData()} options={chartOptions} />
-        </div>
+        </ChartContainer>
       </ChartWrapper>
     </AnalyticsContainer>
   );
