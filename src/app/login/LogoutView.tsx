@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { signOut } from "firebase/auth";
-import { auth } from "../../firebase";
+import { auth, db } from "../../firebase"; // Ensure db is exported from firebase.ts
 import { useRouter } from "next/navigation";
+import { doc, onSnapshot, DocumentSnapshot } from "firebase/firestore";
 
-// Styled Components (shared)
+// Styled Components
 const FormContainer = styled.div`
   background: white;
   font-family: "Helvetica", Arial, sans-serif;
@@ -59,37 +60,102 @@ const ErrorMessage = styled.div`
   text-align: center;
 `;
 
+const RentalsList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin-bottom: 1.5rem;
+`;
+
+const RentalItem = styled.li<{ overdue: boolean }>`
+  font-size: 1rem;
+  color: ${({ overdue }) => (overdue ? "#ef4444" : "#1a1a1a")}; // Red if overdue
+  margin-bottom: 0.5rem;
+`;
+
+interface Rental {
+  itemId: string;
+  name: string;
+  quantity: number;
+  date: string; // ISO string (e.g., "2025-03-26T12:00:00Z")
+}
+
 interface LogoutViewProps {
-  user: any;
+  user: any; // Consider typing as firebase.User
 }
 
 const LogoutView = ({ user }: LogoutViewProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rentals, setRentals] = useState<Rental[]>([]);
   const router = useRouter();
+
+  useEffect(() => {
+    console.log("[LogoutView] Initializing for user:", user.email);
+    const userRef = doc(db, "users", user.uid);
+
+    const unsubscribe = onSnapshot(userRef, (docSnap: DocumentSnapshot) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const userRentals = data.rentals || [];
+        console.log("[LogoutView] Fetched rentals:", userRentals);
+        setRentals(userRentals);
+      } else {
+        console.warn("[LogoutView] User document not found for UID:", user.uid);
+      }
+    }, (err) => {
+      console.error("[LogoutView] Error fetching rentals:", err.message);
+      setError("Kunne ikke hente utlån. Prøv igjen senere.");
+    });
+
+    return () => unsubscribe();
+  }, [user.uid]);
 
   const handleSignOut = async () => {
     try {
       setLoading(true);
       await signOut(auth);
-      console.log("[Login] User signed out");
+      console.log("[LogoutView] User signed out");
       router.push("/login");
     } catch (error: any) {
-      console.error("[Login] Sign out error:", error);
-      setError("Error signing out. Please try again.");
+      console.error("[LogoutView] Sign out error:", error);
+      setError("Feil ved utlogging. Prøv igjen.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Calculate due date (1 week after rental date)
+  const isOverdue = (rentalDate: string): boolean => {
+    const rentalTime = new Date(rentalDate).getTime();
+    const dueTime = rentalTime + 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
+    return Date.now() > dueTime;
+  };
+
   return (
     <FormContainer>
-      <WelcomeMessage>Welcome, {user.email}!</WelcomeMessage>
-      <LogoutNote>
-        Dine utlån hos Låne Lageret venter på deg når du logger inn igjen.
-      </LogoutNote>
+      <WelcomeMessage>Velkommen, {user.email}!</WelcomeMessage>
+      {rentals.length > 0 ? (
+        <>
+          <LogoutNote>Dine aktive utlån:</LogoutNote>
+          <RentalsList>
+            {rentals.map((rental, idx) => {
+              const dueDate = new Date(rental.date);
+              dueDate.setDate(dueDate.getDate() + 7); // Due 1 week later
+              const overdue = isOverdue(rental.date);
+              return (
+                <RentalItem key={idx} overdue={overdue}>
+                  {rental.name} (Antall: {rental.quantity}) - Forfall: {dueDate.toLocaleDateString("no-NO")} 
+                  {overdue && " (Forfalt)"}
+                </RentalItem>
+              );
+            })}
+          </RentalsList>
+        </>
+      ) : (
+        <LogoutNote>Ingen aktive utlån for øyeblikket.</LogoutNote>
+      )}
       <Button onClick={handleSignOut} disabled={loading}>
-        {loading ? "Signing out..." : "Sign Out"}
+        {loading ? "Logger ut..." : "Logg ut"}
       </Button>
       {error && <ErrorMessage>{error}</ErrorMessage>}
     </FormContainer>
