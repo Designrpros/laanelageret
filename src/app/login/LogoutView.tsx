@@ -23,6 +23,7 @@ const WelcomeMessage = styled.div`
   margin-bottom: 1rem;
   text-align: center;
   color: #1a1a1a;
+  
 `;
 
 const LogoutNote = styled.p`
