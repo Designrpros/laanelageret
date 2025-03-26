@@ -5,7 +5,6 @@ import styled from "styled-components";
 import { db } from "../../../firebase";
 import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
 
-// Interfaces (updated with location)
 interface Report {
   id: string;
   userId: string;
@@ -17,10 +16,10 @@ interface Report {
   reportDetails: string;
   reportedAt: string;
   status: string;
-  location: string; // New field for store location
+  location: string;
+  isAdminReport?: boolean; // New field
 }
 
-// Styled Components (unchanged)
 const Container = styled.div`
   padding: clamp(10px, 2vw, 20px);
   font-family: "Helvetica", Arial, sans-serif;
@@ -146,11 +145,21 @@ const DetailItem = styled.li`
 const StatusBadge = styled.span<{ $status: string }>`
   font-size: clamp(10px, 2vw, 14px);
   color: #fff;
-  background: ${({ $status }) => ($status === "pending" ? "#ff4444" : "#28a745")}; /* Green for resolved */
+  background: ${({ $status }) => ($status === "pending" ? "#ff4444" : "#28a745")};
   padding: 4px 12px;
   border-radius: 12px;
   display: inline-block;
   margin-top: 0.5rem;
+`;
+
+const AdminBadge = styled.span`
+  font-size: clamp(10px, 2vw, 14px);
+  color: #fff;
+  background: #1a73e8; /* Blue for admin */
+  padding: 4px 12px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-left: 8px;
 `;
 
 const ResolveButton = styled.button`
@@ -175,7 +184,6 @@ const LostOrBroken = () => {
   const [openReportId, setOpenReportId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  // Same locations array as LocationDetailClient
   const locations = [
     { id: 1, name: "Stabekk", lat: 59.90921845652782, lng: 10.611649286507243 },
   ];
@@ -193,7 +201,8 @@ const LostOrBroken = () => {
         reportDetails: doc.data().reportDetails,
         reportedAt: doc.data().reportedAt,
         status: doc.data().status,
-        location: doc.data().location || "Stabekk", // Default to Stabekk if missing
+        location: doc.data().location || "Stabekk",
+        isAdminReport: doc.data().isAdminReport || false, // Default to false if missing
       }) as Report).sort((a, b) => new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime());
       setReports(fetchedReports);
       setLoading(false);
@@ -218,22 +227,22 @@ const LostOrBroken = () => {
     try {
       const reportRef = doc(db, "reports", reportId);
       await updateDoc(reportRef, { status: "resolved" });
-      alert("Report marked as resolved!");
+      alert("Rapport markert som løst!");
     } catch (error) {
-      console.error("Error resolving report:", error);
-      alert("Failed to resolve report.");
+      console.error("Feil ved løsning av rapport:", error);
+      alert("Kunne ikke løse rapporten.");
     }
   };
 
-  if (loading) return <Container><Title>Loading...</Title></Container>;
+  if (loading) return <Container><Title>Laster...</Title></Container>;
 
   return (
     <Container>
-      <Title>Lost or Broken Items</Title>
+      <Title>Mistet eller ødelagt</Title>
       <SearchContainer>
         <SearchInput
           type="text"
-          placeholder="Search by item name or email..."
+          placeholder="Søk etter gjenstand eller e-post..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -243,30 +252,33 @@ const LostOrBroken = () => {
           {filteredReports.map((report) => (
             <ReportItem key={report.id}>
               <ReportHeader onClick={() => toggleReportDetails(report.id)}>
-                <ReportTitle>{report.itemName} ({report.email}) - {report.location}</ReportTitle>
+                <ReportTitle>
+                  {report.itemName} ({report.email}) - {report.location}
+                  {report.isAdminReport && <AdminBadge>Admin</AdminBadge>}
+                </ReportTitle>
                 <ToggleButton>{openReportId === report.id ? "−" : "+"}</ToggleButton>
               </ReportHeader>
               <ReportDetails isOpen={openReportId === report.id}>
                 <DetailList>
                   <DetailItem>ID: {report.id}</DetailItem>
-                  <DetailItem>User ID: {report.userId}</DetailItem>
-                  <DetailItem>Item ID: {report.itemId}</DetailItem>
-                  <DetailItem>Qty: {report.quantity}</DetailItem>
-                  <DetailItem>Rented: {new Date(report.dateRented).toLocaleString()}</DetailItem>
-                  <DetailItem>Reported: {new Date(report.reportedAt).toLocaleString()}</DetailItem>
-                  <DetailItem>Issue: {report.reportDetails}</DetailItem>
-                  <DetailItem>Location: {report.location}</DetailItem>
+                  <DetailItem>Bruker-ID: {report.userId}</DetailItem>
+                  <DetailItem>Gjenstand-ID: {report.itemId}</DetailItem>
+                  <DetailItem>Antall: {report.quantity}</DetailItem>
+                  <DetailItem>Utleid: {new Date(report.dateRented).toLocaleString()}</DetailItem>
+                  <DetailItem>Rapportert: {new Date(report.reportedAt).toLocaleString()}</DetailItem>
+                  <DetailItem>Problem: {report.reportDetails}</DetailItem>
+                  <DetailItem>Lokasjon: {report.location}</DetailItem>
                 </DetailList>
-                <StatusBadge $status={report.status}>{report.status}</StatusBadge>
+                <StatusBadge $status={report.status}>{report.status === "pending" ? "Venter" : "Løst"}</StatusBadge>
                 {report.status === "pending" && (
-                  <ResolveButton onClick={() => handleResolve(report.id)}>Resolve</ResolveButton>
+                  <ResolveButton onClick={() => handleResolve(report.id)}>Løs</ResolveButton>
                 )}
               </ReportDetails>
             </ReportItem>
           ))}
         </ReportList>
       ) : (
-        <p>No reported items found.</p>
+        <p>Ingen rapporterte gjenstander funnet.</p>
       )}
     </Container>
   );

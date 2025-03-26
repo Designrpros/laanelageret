@@ -3,17 +3,16 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { signOut } from "firebase/auth";
-import { auth, db } from "../../firebase"; // Ensure db is exported from firebase.ts
+import { auth, db } from "../../firebase";
 import { useRouter } from "next/navigation";
 import { doc, onSnapshot, DocumentSnapshot } from "firebase/firestore";
 
-// Styled Components
 const FormContainer = styled.div`
   background: white;
   font-family: "Helvetica", Arial, sans-serif;
-  padding: 2.5rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   width: 100%;
   max-width: 400px;
 `;
@@ -28,7 +27,7 @@ const WelcomeMessage = styled.div`
 
 const LogoutNote = styled.p`
   font-size: 0.875rem;
-  color: #666;
+  color: #6b7280;
   text-align: center;
   margin-bottom: 1.5rem;
 `;
@@ -36,10 +35,10 @@ const LogoutNote = styled.p`
 const Button = styled.button`
   width: 100%;
   padding: 0.75rem;
-  background-color: black;
+  background-color: #1a1a1a;
   color: white;
   border: none;
-  border-radius: 0.375rem;
+  border-radius: 6px;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -67,45 +66,107 @@ const RentalsList = styled.ul`
 `;
 
 const RentalItem = styled.li<{ overdue: boolean }>`
-  font-size: 1rem;
-  color: ${({ overdue }) => (overdue ? "#ef4444" : "#1a1a1a")}; // Red if overdue
-  margin-bottom: 0.5rem;
+  background: ${({ overdue }) => (overdue ? "#fef2f2" : "#ffffff")};
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+  &:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  }
+`;
+
+const RentalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const RentalDetails = styled.div`
+  font-size: 0.9rem;
+  color: #4b5563;
+`;
+
+const RentalTimestamp = styled.div`
+  font-size: 0.85rem;
+  color: #6b7280;
+`;
+
+const OverdueBadge = styled.span`
+  background: #ef4444;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  margin-left: 6px;
+`;
+
+const Dropdown = styled.div`
+  padding: 16px;
+  border-top: 1px solid #e5e7eb;
+  border-radius: 0 0 8px 8px;
+  background: #fafafa;
+`;
+
+const DropdownRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 0.875rem;
+  color: #4b5563;
+`;
+
+const Label = styled.span`
+  font-weight: 500;
+  color: #374151;
 `;
 
 interface Rental {
   itemId: string;
   name: string;
   quantity: number;
-  date: string; // ISO string (e.g., "2025-03-26T12:00:00Z")
+  date: string; // Rental start date
+  dueDate?: string; // Due date (from receipts)
 }
 
 interface LogoutViewProps {
-  user: any; // Consider typing as firebase.User
+  user: any;
 }
 
 const LogoutView = ({ user }: LogoutViewProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rentals, setRentals] = useState<Rental[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     console.log("[LogoutView] Initializing for user:", user.email);
     const userRef = doc(db, "users", user.uid);
 
-    const unsubscribe = onSnapshot(userRef, (docSnap: DocumentSnapshot) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const userRentals = data.rentals || [];
-        console.log("[LogoutView] Fetched rentals:", userRentals);
-        setRentals(userRentals);
-      } else {
-        console.warn("[LogoutView] User document not found for UID:", user.uid);
+    const unsubscribe = onSnapshot(
+      userRef,
+      (docSnap: DocumentSnapshot) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const userRentals = (data.rentals || []).map((rental: any) => ({
+            ...rental,
+            dueDate: rental.dueDate || new Date(new Date(rental.date).setDate(new Date(rental.date).getDate() + 7)).toISOString(),
+          }));
+          console.log("[LogoutView] Fetched rentals:", userRentals);
+          setRentals(userRentals);
+        } else {
+          console.warn("[LogoutView] User document not found for UID:", user.uid);
+        }
+      },
+      (err) => {
+        console.error("[LogoutView] Error fetching rentals:", err.message);
+        setError("Kunne ikke hente utlån. Prøv igjen senere.");
       }
-    }, (err) => {
-      console.error("[LogoutView] Error fetching rentals:", err.message);
-      setError("Kunne ikke hente utlån. Prøv igjen senere.");
-    });
+    );
 
     return () => unsubscribe();
   }, [user.uid]);
@@ -124,11 +185,8 @@ const LogoutView = ({ user }: LogoutViewProps) => {
     }
   };
 
-  // Calculate due date (1 week after rental date)
-  const isOverdue = (rentalDate: string): boolean => {
-    const rentalTime = new Date(rentalDate).getTime();
-    const dueTime = rentalTime + 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
-    return Date.now() > dueTime;
+  const isOverdue = (dueDate: string): boolean => {
+    return Date.now() > new Date(dueDate).getTime();
   };
 
   return (
@@ -138,14 +196,36 @@ const LogoutView = ({ user }: LogoutViewProps) => {
         <>
           <LogoutNote>Dine aktive utlån:</LogoutNote>
           <RentalsList>
-            {rentals.map((rental, idx) => {
-              const dueDate = new Date(rental.date);
-              dueDate.setDate(dueDate.getDate() + 7); // Due 1 week later
-              const overdue = isOverdue(rental.date);
+            {rentals.map((rental) => {
+              const overdue = isOverdue(rental.dueDate || rental.date);
               return (
-                <RentalItem key={idx} overdue={overdue}>
-                  {rental.name} (Antall: {rental.quantity}) - Forfall: {dueDate.toLocaleDateString("no-NO")} 
-                  {overdue && " (Forfalt)"}
+                <RentalItem
+                  key={rental.itemId}
+                  overdue={overdue}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest(".dropdown") === null) {
+                      setExpandedId(expandedId === rental.itemId ? null : rental.itemId);
+                    }
+                  }}
+                >
+                  <RentalHeader>
+                    <RentalDetails>
+                      {rental.name} ({rental.quantity})
+                      {overdue && <OverdueBadge>Forfalt</OverdueBadge>}
+                    </RentalDetails>
+                    <RentalTimestamp>{new Date(rental.date).toLocaleDateString("no-NO")}</RentalTimestamp>
+                  </RentalHeader>
+                  {expandedId === rental.itemId && (
+                    <Dropdown className="dropdown">
+                      <DropdownRow>
+                        <Label>Forfall:</Label>
+                        <span>
+                          {new Date(rental.dueDate || rental.date).toLocaleDateString("no-NO")}
+                          {overdue && " (Forfalt)"}
+                        </span>
+                      </DropdownRow>
+                    </Dropdown>
+                  )}
                 </RentalItem>
               );
             })}
