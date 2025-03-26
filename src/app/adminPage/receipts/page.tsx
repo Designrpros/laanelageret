@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { db } from "../../../firebase";
-import { collection, onSnapshot, doc, updateDoc, addDoc, getDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc, getDoc, addDoc } from "firebase/firestore";
 
 interface Receipt {
   id: string;
@@ -22,21 +22,21 @@ interface Receipt {
 
 const Container = styled.div`
   background: #fff;
-  padding: 24px;
+  padding: clamp(16px, 3vw, 24px);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   width: 100%;
-  max-width: 900px;
+  max-width: clamp(300px, 90vw, 900px); /* Responsive width */
   margin: 0 auto;
   font-family: "Helvetica", Arial, sans-serif;
 `;
 
 const Title = styled.h1`
-  font-size: 1.75rem;
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
   font-weight: 600;
   color: #1a1a1a;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: clamp(12px, 2vw, 20px);
 `;
 
 const ReceiptList = styled.ul`
@@ -50,8 +50,8 @@ const ReceiptItem = styled.li<{ $type: string; $isOverdue?: boolean }>`
     $isOverdue && $type === "rental" ? "#fef2f2" : $type === "rental" ? "#ffffff" : "#f7faf7"};
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  margin-bottom: 8px;
-  padding: 12px 16px;
+  margin-bottom: clamp(6px, 1vw, 8px);
+  padding: clamp(10px, 2vw, 12px) clamp(12px, 2vw, 16px);
   cursor: pointer;
   transition: box-shadow 0.2s ease;
   &:hover {
@@ -63,29 +63,33 @@ const ReceiptHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap; /* Allow wrapping on small screens */
+  gap: clamp(8px, 1vw, 12px);
 `;
 
 const ReceiptDetails = styled.div`
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
   color: #4b5563;
+  flex: 1;
+  min-width: 0; /* Prevent overflow */
 `;
 
 const ReceiptTimestamp = styled.div`
-  font-size: 0.85rem;
+  font-size: clamp(0.75rem, 1.5vw, 0.85rem);
   color: #6b7280;
 `;
 
 const OverdueBadge = styled.span`
   background: #ef4444;
   color: #fff;
-  padding: 2px 6px;
+  padding: clamp(2px, 0.5vw, 4px) clamp(4px, 1vw, 6px);
   border-radius: 10px;
-  font-size: 0.75rem;
-  margin-left: 6px;
+  font-size: clamp(0.65rem, 1.5vw, 0.75rem);
+  margin-left: clamp(4px, 1vw, 6px);
 `;
 
 const Dropdown = styled.div`
-  padding: 16px;
+  padding: clamp(12px, 2vw, 16px);
   border-top: 1px solid #e5e7eb;
   border-radius: 0 0 8px 8px;
   background: #fafafa;
@@ -95,29 +99,34 @@ const DropdownRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-  font-size: 0.875rem;
+  margin-bottom: clamp(8px, 1.5vw, 12px);
+  font-size: clamp(0.8rem, 2vw, 0.875rem);
   color: #4b5563;
+  flex-wrap: wrap; /* Responsive wrapping */
+  gap: clamp(6px, 1vw, 10px);
 `;
 
 const ButtonRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: clamp(8px, 1.5vw, 12px);
+  gap: clamp(6px, 1vw, 10px);
+  flex-wrap: wrap; /* Responsive wrapping */
 `;
 
 const Label = styled.span`
   font-weight: 500;
   color: #374151;
+  flex-shrink: 0;
 `;
 
 const Input = styled.input`
-  padding: 6px 10px;
+  padding: clamp(4px, 1vw, 6px) clamp(8px, 1.5vw, 10px);
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 0.875rem;
-  width: 80px;
+  font-size: clamp(0.8rem, 2vw, 0.875rem);
+  width: clamp(60px, 15vw, 80px);
   background: #fff;
   transition: border-color 0.2s;
   &:focus {
@@ -127,11 +136,11 @@ const Input = styled.input`
 `;
 
 const Select = styled.select`
-  padding: 6px 10px;
+  padding: clamp(4px, 1vw, 6px) clamp(8px, 1.5vw, 10px);
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 0.875rem;
-  width: 120px;
+  font-size: clamp(0.8rem, 2vw, 0.875rem);
+  width: clamp(90px, 20vw, 120px);
   background: #fff;
   transition: border-color 0.2s;
   &:focus {
@@ -141,12 +150,12 @@ const Select = styled.select`
 `;
 
 const ActionButton = styled.button`
-  padding: 6px 12px;
+  padding: clamp(4px, 1vw, 6px) clamp(8px, 1.5vw, 12px);
   background-color: #1a1a1a;
   color: #fff;
   border: none;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: clamp(0.75rem, 2vw, 0.85rem);
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -162,11 +171,11 @@ const ReportSection = styled.div<{ $isOpen: boolean }>`
 `;
 
 const ReportToggleButton = styled.button`
-  padding: 6px 12px;
+  padding: clamp(4px, 1vw, 6px) clamp(8px, 1.5vw, 12px);
   background: none;
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: clamp(0.75rem, 2vw, 0.85rem);
   color: #4b5563;
   cursor: pointer;
   transition: border-color 0.2s, color 0.2s;
@@ -177,15 +186,15 @@ const ReportToggleButton = styled.button`
 `;
 
 const ReportTextarea = styled.textarea`
-  padding: 8px;
+  padding: clamp(6px, 1vw, 8px);
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 0.875rem;
+  font-size: clamp(0.8rem, 2vw, 0.875rem);
   width: 100%;
-  min-height: 80px;
+  min-height: clamp(60px, 15vw, 80px);
   resize: vertical;
   background: #fff;
-  margin-top: 8px;
+  margin-top: clamp(6px, 1vw, 8px);
   transition: border-color 0.2s;
   &:focus {
     border-color: #1a1a1a;
@@ -194,13 +203,13 @@ const ReportTextarea = styled.textarea`
 `;
 
 const ReportSelect = styled.select`
-  padding: 6px 10px;
+  padding: clamp(4px, 1vw, 6px) clamp(8px, 1.5vw, 10px);
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 0.875rem;
-  width: 120px;
+  font-size: clamp(0.8rem, 2vw, 0.875rem);
+  width: clamp(90px, 20vw, 120px);
   background: #fff;
-  margin-top: 8px;
+  margin-top: clamp(6px, 1vw, 8px);
   transition: border-color 0.2s;
   &:focus {
     border-color: #1a1a1a;
@@ -210,17 +219,17 @@ const ReportSelect = styled.select`
 
 const ErrorMessage = styled.div`
   color: #ef4444;
-  font-size: 0.8rem;
-  margin-top: 8px;
+  font-size: clamp(0.7rem, 1.5vw, 0.8rem);
+  margin-top: clamp(6px, 1vw, 8px);
   text-align: center;
 `;
 
 const EmptyMessage = styled.p`
-  font-size: 1rem;
+  font-size: clamp(0.9rem, 2vw, 1rem);
   color: #6b7280;
   text-align: center;
   font-style: italic;
-  margin-top: 20px;
+  margin-top: clamp(12px, 2vw, 20px);
 `;
 
 const Receipts = () => {
@@ -234,6 +243,7 @@ const Receipts = () => {
 
   const locations = [
     { id: 1, name: "Stabekk", lat: 59.90921845652782, lng: 10.611649286507243 },
+    { id: 2, name: "Oslo", lat: 59.9139, lng: 10.7522 },
   ];
 
   useEffect(() => {
@@ -281,13 +291,11 @@ const Receipts = () => {
     const newDueDate = new Date(currentDueDate);
     newDueDate.setDate(newDueDate.getDate() + 7);
     const updatedReceipt = { ...receipt, dueDate: newDueDate.toISOString() };
-  
+
     try {
-      // Update receipts collection
       const receiptRef = doc(db, "receipts", receipt.id);
       await updateDoc(receiptRef, { dueDate: updatedReceipt.dueDate });
-  
-      // Update users.rentals
+
       const userRef = doc(db, "users", receipt.userId);
       const userDoc = await getDoc(userRef);
       if (userDoc.exists()) {
@@ -298,7 +306,7 @@ const Receipts = () => {
         await updateDoc(userRef, { rentals: updatedRentals });
         console.log("[Receipts] Updated users.rentals for:", receipt.itemName);
       }
-  
+
       console.log("[Receipts] Extended due date for:", receipt.itemName);
       setReceipts((prev) => prev.map((r) => (r.id === receipt.id ? updatedReceipt : r)));
       setErrors((prev) => ({ ...prev, [receipt.id]: null }));
@@ -316,20 +324,18 @@ const Receipts = () => {
     const currentDueDate = new Date(receipt.dueDate || minDueDate);
     const newDueDate = new Date(currentDueDate);
     newDueDate.setDate(newDueDate.getDate() - 7);
-  
+
     if (newDueDate < minDueDate) {
       setErrors((prev) => ({ ...prev, [receipt.id]: "Kan ikke forkorte før 1 uke fra utleie." }));
       return;
     }
-  
+
     const updatedReceipt = { ...receipt, dueDate: newDueDate.toISOString() };
-  
+
     try {
-      // Update receipts collection
       const receiptRef = doc(db, "receipts", receipt.id);
       await updateDoc(receiptRef, { dueDate: updatedReceipt.dueDate });
-  
-      // Update users.rentals
+
       const userRef = doc(db, "users", receipt.userId);
       const userDoc = await getDoc(userRef);
       if (userDoc.exists()) {
@@ -340,7 +346,7 @@ const Receipts = () => {
         await updateDoc(userRef, { rentals: updatedRentals });
         console.log("[Receipts] Updated users.rentals for:", receipt.itemName);
       }
-  
+
       console.log("[Receipts] Shortened due date for:", receipt.itemName);
       setReceipts((prev) => prev.map((r) => (r.id === receipt.id ? updatedReceipt : r)));
       setErrors((prev) => ({ ...prev, [receipt.id]: null }));
@@ -371,12 +377,10 @@ const Receipts = () => {
       setErrors((prev) => ({ ...prev, [receipt.id]: "Velg en status før du sender." }));
       return;
     }
-  
+
     try {
-      // Update receipt with report status and details
       await updateReceipt(receipt.id, { reportStatus: status, reportDetails: details });
-  
-      // Add to reports collection
+
       const reportData = {
         userId: receipt.userId,
         email: receipt.email,
@@ -388,11 +392,11 @@ const Receipts = () => {
         reportedAt: new Date().toISOString(),
         status: "pending",
         location: receipt.location,
-        isAdminReport: true, // Mark as admin-submitted
+        isAdminReport: true,
       };
       await addDoc(collection(db, "reports"), reportData);
       console.log("[Receipts] Report added to reports collection:", reportData);
-  
+
       setReportOpen((prev) => ({ ...prev, [receipt.id]: false }));
     } catch (err) {
       console.error("[Receipts] Error submitting report:", err);
@@ -418,7 +422,6 @@ const Receipts = () => {
                 $type={receipt.type}
                 $isOverdue={overdue}
                 onClick={(e) => {
-                  // Only toggle if clicking the header, not dropdown
                   if ((e.target as HTMLElement).closest(".dropdown") === null) {
                     setExpandedId(expandedId === receipt.id ? null : receipt.id);
                   }
@@ -434,30 +437,30 @@ const Receipts = () => {
                 </ReceiptHeader>
                 {expandedId === receipt.id && (
                   <Dropdown className="dropdown">
-                    <DropdownRow>
-                      <Label>Forfall:</Label>
-                      <span>
-                        {dueDate.toLocaleDateString("no-NO")}
-                        {overdue && " (Forfalt)"}
-                      </span>
-                    </DropdownRow>
-                    <ButtonRow>
-                      {receipt.type === "rental" && (
-                        <>
+                    {receipt.type === "rental" && (
+                      <>
+                        <DropdownRow>
+                          <Label>Forfall:</Label>
+                          <span>
+                            {dueDate.toLocaleDateString("no-NO")}
+                            {overdue && " (Forfalt)"}
+                          </span>
+                        </DropdownRow>
+                        <ButtonRow>
                           <ActionButton onClick={(e) => shortenDueDate(receipt, e)}>– 1 uke</ActionButton>
                           <ActionButton onClick={(e) => extendDueDate(receipt, e)}>+ 1 uke</ActionButton>
-                        </>
-                      )}
-                    </ButtonRow>
+                        </ButtonRow>
+                      </>
+                    )}
                     <DropdownRow>
                       <Label>Antall:</Label>
                       <Input
                         type="number"
                         value={receipt.quantity}
                         min={1}
-                        onClick={(e) => e.stopPropagation()} // Prevent closing
+                        onClick={(e) => e.stopPropagation()}
                         onChange={(e) => {
-                          e.stopPropagation(); // Prevent closing
+                          e.stopPropagation();
                           updateReceipt(receipt.id, { quantity: parseInt(e.target.value) || 1 });
                         }}
                       />
@@ -466,9 +469,9 @@ const Receipts = () => {
                       <Label>Lokasjon:</Label>
                       <Select
                         value={receipt.location}
-                        onClick={(e) => e.stopPropagation()} // Prevent closing
+                        onClick={(e) => e.stopPropagation()}
                         onChange={(e) => {
-                          e.stopPropagation(); // Prevent closing
+                          e.stopPropagation();
                           updateReceipt(receipt.id, { location: e.target.value });
                         }}
                       >
@@ -479,56 +482,53 @@ const Receipts = () => {
                         ))}
                       </Select>
                     </DropdownRow>
-                    {receipt.type === "rental" && (
-                      <>
-                        <DropdownRow>
-                          <Label>Status:</Label>
-                          <ReportSelect
-                            value={reportStatus[receipt.id] || receipt.reportStatus || ""}
-                            onClick={(e) => e.stopPropagation()} // Prevent closing
-                            onChange={(e) => {
-                              e.stopPropagation(); // Prevent closing
-                              setReportStatus((prev) => ({
-                                ...prev,
-                                [receipt.id]: e.target.value as "okay" | "not_okay" | "",
-                              }));
-                            }}
-                          >
-                            <option value="">Velg</option>
-                            <option value="okay">Okay</option>
-                            <option value="not_okay">Ikke Okay</option>
-                          </ReportSelect>
-                        </DropdownRow>
-                        <ButtonRow>
-                          <ReportToggleButton
-                            onClick={(e) => {
-                              e.stopPropagation(); // Prevent closing
-                              setReportOpen((prev) => ({
-                                ...prev,
-                                [receipt.id]: !prev[receipt.id],
-                              }));
-                            }}
-                          >
-                            {reportOpen[receipt.id] ? "Skjul rapport" : "Legg til rapport"}
-                          </ReportToggleButton>
-                          <ActionButton onClick={(e) => handleReportSubmit(receipt, e)}>
-                            Lagre
-                          </ActionButton>
-                        </ButtonRow>
-                        <ReportSection $isOpen={reportOpen[receipt.id] || false}>
-                          <ReportTextarea
-                            value={reportDetails[receipt.id] || receipt.reportDetails || ""}
-                            onClick={(e) => e.stopPropagation()} // Prevent closing
-                            onChange={(e) => {
-                              e.stopPropagation(); // Prevent closing
-                              setReportDetails((prev) => ({ ...prev, [receipt.id]: e.target.value }));
-                            }}
-                            placeholder="Beskriv tilstand"
-                          />
-                        </ReportSection>
-                        {errors[receipt.id] && <ErrorMessage>{errors[receipt.id]}</ErrorMessage>}
-                      </>
-                    )}
+                    {/* Status and Report for both rental and return */}
+                    <DropdownRow>
+                      <Label>Status:</Label>
+                      <ReportSelect
+                        value={reportStatus[receipt.id] || receipt.reportStatus || ""}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setReportStatus((prev) => ({
+                            ...prev,
+                            [receipt.id]: e.target.value as "okay" | "not_okay" | "",
+                          }));
+                        }}
+                      >
+                        <option value="">Velg</option>
+                        <option value="okay">Okay</option>
+                        <option value="not_okay">Ikke Okay</option>
+                      </ReportSelect>
+                    </DropdownRow>
+                    <ButtonRow>
+                      <ReportToggleButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReportOpen((prev) => ({
+                            ...prev,
+                            [receipt.id]: !prev[receipt.id],
+                          }));
+                        }}
+                      >
+                        {reportOpen[receipt.id] ? "Skjul rapport" : "Legg til rapport"}
+                      </ReportToggleButton>
+                      <ActionButton onClick={(e) => handleReportSubmit(receipt, e)}>
+                        Lagre
+                      </ActionButton>
+                    </ButtonRow>
+                    <ReportSection $isOpen={reportOpen[receipt.id] || false}>
+                      <ReportTextarea
+                        value={reportDetails[receipt.id] || receipt.reportDetails || ""}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setReportDetails((prev) => ({ ...prev, [receipt.id]: e.target.value }));
+                        }}
+                        placeholder="Beskriv tilstand"
+                      />
+                    </ReportSection>
+                    {errors[receipt.id] && <ErrorMessage>{errors[receipt.id]}</ErrorMessage>}
                   </Dropdown>
                 )}
               </ReceiptItem>
