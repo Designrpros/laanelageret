@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db, storage } from "../../../firebase";
-import { collection, addDoc, deleteDoc, doc, setDoc, onSnapshot, getDocs, updateDoc } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, doc, setDoc, onSnapshot, getDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 interface Item { id: string; name: string; category: string; subcategory?: string; imageUrl: string; rented: number; inStock: number; description?: string; gallery?: string[]; location: string; createdAt?: string; }
@@ -42,37 +42,34 @@ export const useItemsViewModel = () => {
         createdAt: doc.data().createdAt || "",
       }) as Item).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       setItems(fetchedItems);
+    });
+
+    const unsubscribeCategories = onSnapshot(collection(db, "categories"), (snapshot) => {
+      const fetchedCategories = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        name: doc.data().name,
+        subcategories: doc.data().subcategories || [],
+      })) as Category[];
+      if (fetchedCategories.length === 0) {
+        const initialCategories = [
+          { name: "Bikes", subcategories: ["Mountain", "City"] },
+          { name: "Camping", subcategories: ["Tents", "Sleeping Bags"] },
+        ];
+        initialCategories.forEach((cat) => setDoc(doc(db, "categories", cat.name), cat));
+        setCategories(initialCategories.map((cat) => ({ id: cat.name, ...cat })));
+      } else {
+        setCategories(fetchedCategories);
+      }
+      setIsLoading(false);
+    }, (error) => {
+      setError("Failed to fetch categories: " + error.message);
       setIsLoading(false);
     });
 
-    const fetchCategories = async () => {
-      try {
-        setIsLoading(true);
-        const categoriesCollection = await getDocs(collection(db, "categories"));
-        const fetched = categoriesCollection.docs.map((doc) => ({
-          id: doc.id,
-          name: doc.data().name,
-          subcategories: doc.data().subcategories || [],
-        })) as Category[];
-        if (fetched.length === 0) {
-          const initialCategories = [
-            { name: "Bikes", subcategories: ["Mountain", "City"] },
-            { name: "Camping", subcategories: ["Tents", "Sleeping Bags"] },
-          ];
-          for (const cat of initialCategories) await setDoc(doc(db, "categories", cat.name), cat);
-          setCategories(initialCategories.map((cat) => ({ id: cat.name, ...cat })));
-        } else {
-          setCategories(fetched);
-        }
-      } catch (error) {
-        setError("Failed to fetch categories: " + (error as Error).message);
-      } finally {
-        setIsLoading(false);
-      }
+    return () => {
+      unsubscribeItems();
+      unsubscribeCategories();
     };
-
-    fetchCategories();
-    return () => unsubscribeItems();
   }, []);
 
   const handleAddItem = async () => {
@@ -95,7 +92,7 @@ export const useItemsViewModel = () => {
         location: newItem.location,
         createdAt: new Date().toISOString(),
       };
-      const docRef = await addDoc(collection(db, "items"), itemData);
+      await addDoc(collection(db, "items"), itemData);
       setNewItem({ name: "", category: "", subcategory: "", image: null, rented: 0, inStock: 10, location: "" });
       setIsFormOpen(false);
     } catch (error) {
@@ -117,6 +114,7 @@ export const useItemsViewModel = () => {
   };
 
   const handleAddCategory = async () => {
+    console.log("handleAddCategory called with:", newCategory);
     if (!newCategory.name || !newCategory.subcategory) {
       setError("Category name and subcategory are required");
       return;
@@ -125,32 +123,31 @@ export const useItemsViewModel = () => {
     setIsLoading(true);
     try {
       const categoryRef = doc(db, "categories", newCategory.name);
-      const existingCategory = categories.find((cat) => cat.name === newCategory.name);
+      const categorySnap = await getDoc(categoryRef);
 
-      if (existingCategory) {
-        // Update existing category by adding the new subcategory if it doesn't already exist
-        if (!existingCategory.subcategories.includes(newCategory.subcategory)) {
-          const updatedSubcategories = [...existingCategory.subcategories, newCategory.subcategory];
+      if (categorySnap.exists()) {
+        const existingData = categorySnap.data();
+        const subcategories = existingData.subcategories || [];
+        if (!subcategories.includes(newCategory.subcategory)) {
+          const updatedSubcategories = [...subcategories, newCategory.subcategory];
           await updateDoc(categoryRef, { subcategories: updatedSubcategories });
-          setCategories(
-            categories.map((cat) =>
-              cat.name === newCategory.name ? { ...cat, subcategories: updatedSubcategories } : cat
-            )
-          );
+          console.log("Updated category:", newCategory.name);
+        } else {
+          console.log("Subcategory already exists in", newCategory.name);
         }
       } else {
-        // Create a new category
         const newCat = {
           name: newCategory.name,
           subcategories: [newCategory.subcategory],
         };
         await setDoc(categoryRef, newCat);
-        setCategories([...categories, { id: newCategory.name, ...newCat }]);
+        console.log("Created new category:", newCategory.name);
       }
 
       setNewCategory({ name: "", subcategory: "" });
       setIsCategoryFormOpen(false);
     } catch (error) {
+      console.error("Error adding category:", error);
       setError("Failed to add category: " + (error as Error).message);
     } finally {
       setIsLoading(false);
