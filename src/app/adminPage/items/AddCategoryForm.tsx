@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 
 const CategoryForm = styled.div<{ isopen: boolean }>`
@@ -20,6 +20,11 @@ const CategoryForm = styled.div<{ isopen: boolean }>`
   }
 `;
 
+const InputContainer = styled.div`
+  position: relative;
+  width: 100%;
+`;
+
 const Input = styled.input`
   padding: clamp(8px, 1.5vw, 12px);
   font-size: clamp(14px, 2vw, 16px);
@@ -33,6 +38,35 @@ const Input = styled.input`
 
   &:focus {
     border-color: #333;
+  }
+`;
+
+const SuggestionsList = styled.ul`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #1a1a1a;
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+`;
+
+const SuggestionItem = styled.li`
+  padding: clamp(8px, 1.5vw, 12px);
+  font-size: clamp(14px, 2vw, 16px);
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: #e0e0e0;
   }
 `;
 
@@ -64,6 +98,14 @@ const ErrorText = styled.p`
   margin: 0;
 `;
 
+interface Category {
+  id: string;
+  name: string;
+  subcategories: string[];
+  createdAt?: string;
+  createdBy?: string;
+}
+
 interface AddCategoryFormProps {
   newCategory: { name: string; subcategory: string };
   setNewCategory: (category: { name: string; subcategory: string }) => void;
@@ -72,6 +114,7 @@ interface AddCategoryFormProps {
   isLoading: boolean;
   error: string | null;
   clearError: () => void;
+  categories: Category[];
 }
 
 export const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
@@ -82,20 +125,57 @@ export const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
   isLoading,
   error,
   clearError,
+  categories,
 }) => {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
   const handleSubmit = () => {
     clearError();
     handleAddCategory();
+    setShowSuggestions(false);
   };
 
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewCategory({ ...newCategory, name: value });
+    setShowSuggestions(value.length > 0);
+  };
+
+  const handleSuggestionClick = (categoryName: string) => {
+    setNewCategory({ ...newCategory, name: categoryName });
+    setShowSuggestions(false);
+  };
+
+  const filteredSuggestions = (categories || [])
+    .filter((cat) =>
+      cat.name.toLowerCase().includes(newCategory.name.toLowerCase().trim())
+    )
+    .map((cat) => cat.name);
+
   return (
-    <CategoryForm isopen={isCategoryFormOpen}>
-      <Input
-        type="text"
-        placeholder="Category Name"
-        value={newCategory.name}
-        onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-      />
+    <CategoryForm isopen={isCategoryFormOpen ?? false}> {/* Fallback to false */}
+      <InputContainer>
+        <Input
+          type="text"
+          placeholder="Category Name"
+          value={newCategory.name}
+          onChange={handleCategoryChange}
+          onFocus={() => setShowSuggestions(newCategory.name.length > 0)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+        />
+        {showSuggestions && filteredSuggestions.length > 0 && (
+          <SuggestionsList>
+            {filteredSuggestions.map((suggestion) => (
+              <SuggestionItem
+                key={suggestion}
+                onClick={() => handleSuggestionClick(suggestion)}
+              >
+                {suggestion}
+              </SuggestionItem>
+            ))}
+          </SuggestionsList>
+        )}
+      </InputContainer>
       <Input
         type="text"
         placeholder="Subcategory/Tag"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db, storage, auth } from "../../../firebase"; // Ensure 'auth' is imported
+import { db, storage, auth } from "../../../firebase";
 import { collection, addDoc, deleteDoc, doc, setDoc, onSnapshot, getDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -38,6 +38,10 @@ interface Category {
   createdBy?: string;
 }
 
+const capitalizeFirstLetter = (str: string) => {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
+
 export const useItemsViewModel = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [newItem, setNewItem] = useState<NewItem>({
@@ -50,13 +54,13 @@ export const useItemsViewModel = () => {
     location: "",
   });
   const [searchTerm, setSearchTerm] = useState("");
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
+  const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState<boolean>(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isCategoryFormOpen, setIsCategoryFormOpen] = useState(false);
+  const [isCategoryFormOpen, setIsCategoryFormOpen] = useState<boolean>(false);
   const [newCategory, setNewCategory] = useState({ name: "", subcategory: "" });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -92,12 +96,13 @@ export const useItemsViewModel = () => {
       (snapshot) => {
         const fetchedCategories = snapshot.docs.map((doc) => ({
           id: doc.id,
-          name: doc.data().name,
-          subcategories: doc.data().subcategories || [],
+          name: capitalizeFirstLetter(doc.data().name), // Display with first letter capitalized
+          subcategories: (doc.data().subcategories || []).map((sub: string) => capitalizeFirstLetter(sub)),
           createdAt: doc.data().createdAt || "",
           createdBy: doc.data().createdBy || "",
-        }) as Category); // Assert each item as Category
-        setCategories(fetchedCategories); // Now correctly typed as Category[]
+        }) as Category);
+        console.log("Fetched categories:", fetchedCategories); // Debug log
+        setCategories(fetchedCategories);
         setIsLoading(false);
       },
       (error) => {
@@ -125,7 +130,7 @@ export const useItemsViewModel = () => {
 
     setIsLoading(true);
     try {
-      const user = auth.currentUser; // Use imported auth
+      const user = auth.currentUser;
       if (!user) throw new Error("You must be logged in to add items");
 
       const imageRef = ref(storage, `items/${Date.now()}_${image.name}`);
@@ -134,8 +139,8 @@ export const useItemsViewModel = () => {
 
       const itemData = {
         name: name.trim(),
-        category: category.trim().toLowerCase(),
-        subcategory: subcategory.trim().toLowerCase(),
+        category: capitalizeFirstLetter(category.trim()), // Store with first letter capitalized
+        subcategory: capitalizeFirstLetter(subcategory.trim()),
         imageUrl,
         rented: newItem.rented ?? 0,
         inStock: newItem.inStock ?? 10,
@@ -161,7 +166,7 @@ export const useItemsViewModel = () => {
     }
     setIsLoading(true);
     try {
-      const user = auth.currentUser; // Use imported auth
+      const user = auth.currentUser;
       if (!user) throw new Error("You must be logged in to delete items");
       await deleteDoc(doc(db, "items", id));
     } catch (error) {
@@ -175,10 +180,13 @@ export const useItemsViewModel = () => {
   const handleAddCategory = async () => {
     console.log("handleAddCategory called with:", newCategory);
     
-    const categoryName = newCategory.name.trim().toLowerCase();
-    const subcategoryName = newCategory.subcategory.trim().toLowerCase();
+    const categoryNameRaw = newCategory.name.trim();
+    const subcategoryNameRaw = newCategory.subcategory.trim();
+    const categoryNameLower = categoryNameRaw.toLowerCase(); // For document ID
+    const categoryName = capitalizeFirstLetter(categoryNameRaw); // For display
+    const subcategoryName = capitalizeFirstLetter(subcategoryNameRaw);
 
-    if (!categoryName || !subcategoryName) {
+    if (!categoryNameRaw || !subcategoryNameRaw) {
       setError("Category name and subcategory are required");
       return;
     }
@@ -189,19 +197,24 @@ export const useItemsViewModel = () => {
 
     setIsLoading(true);
     try {
-      const user = auth.currentUser; // Use imported auth
+      const user = auth.currentUser;
       if (!user) {
         throw new Error("You must be logged in to add categories");
       }
 
-      const categoryRef = doc(db, "categories", categoryName);
+      const categoryRef = doc(db, "categories", categoryNameLower); // Use lowercase ID
       const categorySnap = await getDoc(categoryRef);
 
       if (categorySnap.exists()) {
         const existingData = categorySnap.data();
-        const subcategories = Array.isArray(existingData.subcategories) ? existingData.subcategories : [];
-        if (!subcategories.includes(subcategoryName)) {
-          const updatedSubcategories = [...subcategories, subcategoryName];
+        const subcategories = Array.isArray(existingData.subcategories)
+          ? existingData.subcategories.map((sub: string) => sub.toLowerCase())
+          : [];
+        if (!subcategories.includes(subcategoryName.toLowerCase())) {
+          const updatedSubcategories = [
+            ...existingData.subcategories,
+            subcategoryName,
+          ];
           await updateDoc(categoryRef, { subcategories: updatedSubcategories });
           console.log("Added subcategory to existing category:", categoryName);
         } else {
@@ -233,7 +246,7 @@ export const useItemsViewModel = () => {
   const filterCategories = ["All", ...categories.map((cat) => cat.name)];
   const filteredItems = items.filter(
     (item) =>
-      (selectedCategory === "All" || item.category === selectedCategory) &&
+      (selectedCategory === "All" || item.category.toLowerCase() === selectedCategory.toLowerCase()) &&
       item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
