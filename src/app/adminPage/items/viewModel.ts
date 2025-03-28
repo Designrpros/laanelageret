@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { db, storage } from "../../../firebase";
-import { collection, addDoc, deleteDoc, doc, setDoc, onSnapshot, getDocs } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, doc, setDoc, onSnapshot, getDocs, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-// Interfaces (unchanged)
 interface Item { id: string; name: string; category: string; subcategory?: string; imageUrl: string; rented: number; inStock: number; description?: string; gallery?: string[]; location: string; createdAt?: string; }
 interface NewItem { name: string; category: string; subcategory: string; image: File | null; rented?: number; inStock?: number; location: string; }
 interface Category { id: string; name: string; subcategories: string[]; }
@@ -41,13 +40,12 @@ export const useItemsViewModel = () => {
         gallery: doc.data().gallery || [doc.data().imageUrl],
         location: doc.data().location || "Unknown",
         createdAt: doc.data().createdAt || "",
-      }) as Item).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()); // Sort by createdAt
+      }) as Item).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       setItems(fetchedItems);
       setIsLoading(false);
     });
 
     const fetchCategories = async () => {
-      // Unchanged fetchCategories logic
       try {
         setIsLoading(true);
         const categoriesCollection = await getDocs(collection(db, "categories"));
@@ -78,7 +76,6 @@ export const useItemsViewModel = () => {
   }, []);
 
   const handleAddItem = async () => {
-    // Unchanged handleAddItem logic
     if (!newItem.name || !newItem.category || !newItem.subcategory || !newItem.image || !newItem.location) {
       setError("All fields are required");
       return;
@@ -120,7 +117,44 @@ export const useItemsViewModel = () => {
   };
 
   const handleAddCategory = async () => {
-    // Unchanged handleAddCategory logic
+    if (!newCategory.name || !newCategory.subcategory) {
+      setError("Category name and subcategory are required");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const categoryRef = doc(db, "categories", newCategory.name);
+      const existingCategory = categories.find((cat) => cat.name === newCategory.name);
+
+      if (existingCategory) {
+        // Update existing category by adding the new subcategory if it doesn't already exist
+        if (!existingCategory.subcategories.includes(newCategory.subcategory)) {
+          const updatedSubcategories = [...existingCategory.subcategories, newCategory.subcategory];
+          await updateDoc(categoryRef, { subcategories: updatedSubcategories });
+          setCategories(
+            categories.map((cat) =>
+              cat.name === newCategory.name ? { ...cat, subcategories: updatedSubcategories } : cat
+            )
+          );
+        }
+      } else {
+        // Create a new category
+        const newCat = {
+          name: newCategory.name,
+          subcategories: [newCategory.subcategory],
+        };
+        await setDoc(categoryRef, newCat);
+        setCategories([...categories, { id: newCategory.name, ...newCat }]);
+      }
+
+      setNewCategory({ name: "", subcategory: "" });
+      setIsCategoryFormOpen(false);
+    } catch (error) {
+      setError("Failed to add category: " + (error as Error).message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const filterCategories = ["All", ...categories.map((cat) => cat.name)];

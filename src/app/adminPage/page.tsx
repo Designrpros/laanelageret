@@ -24,7 +24,6 @@ export default function AdminPage() {
           (adminEmail) => adminEmail.toLowerCase() === email.toLowerCase()
         );
         console.log(`[AdminPage] Checking admin status - Email: ${email}, Is Admin: ${isAdmin}`);
-        console.log("[AdminPage] Allowed admin emails:", ADMIN_EMAILS);
         setIsAuthorized(isAdmin);
 
         if (!isAdmin) {
