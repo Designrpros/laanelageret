@@ -1,18 +1,53 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db, storage } from "../../../firebase";
+import { db, storage, auth } from "../../../firebase"; // Ensure 'auth' is imported
 import { collection, addDoc, deleteDoc, doc, setDoc, onSnapshot, getDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-interface Item { id: string; name: string; category: string; subcategory?: string; imageUrl: string; rented: number; inStock: number; description?: string; gallery?: string[]; location: string; createdAt?: string; }
-interface NewItem { name: string; category: string; subcategory: string; image: File | null; rented?: number; inStock?: number; location: string; }
-interface Category { id: string; name: string; subcategories: string[]; }
+interface Item {
+  id: string;
+  name: string;
+  category: string;
+  subcategory?: string;
+  imageUrl: string;
+  rented: number;
+  inStock: number;
+  description?: string;
+  gallery?: string[];
+  location: string;
+  createdAt?: string;
+  createdBy?: string;
+}
+
+interface NewItem {
+  name: string;
+  category: string;
+  subcategory: string;
+  image: File | null;
+  rented?: number;
+  inStock?: number;
+  location: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  subcategories: string[];
+  createdAt?: string;
+  createdBy?: string;
+}
 
 export const useItemsViewModel = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [newItem, setNewItem] = useState<NewItem>({
-    name: "", category: "", subcategory: "", image: null, rented: 0, inStock: 10, location: "",
+    name: "",
+    category: "",
+    subcategory: "",
+    image: null,
+    rented: 0,
+    inStock: 10,
+    location: "",
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -27,44 +62,49 @@ export const useItemsViewModel = () => {
   useEffect(() => {
     setIsLoading(true);
 
-    const unsubscribeItems = onSnapshot(collection(db, "items"), (snapshot) => {
-      const fetchedItems = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        name: doc.data().name,
-        category: doc.data().category,
-        subcategory: doc.data().subcategory,
-        imageUrl: doc.data().imageUrl,
-        rented: doc.data().rented || 0,
-        inStock: doc.data().inStock || 0,
-        description: doc.data().description || "Ingen beskrivelse tilgjengelig.",
-        gallery: doc.data().gallery || [doc.data().imageUrl],
-        location: doc.data().location || "Unknown",
-        createdAt: doc.data().createdAt || "",
-      }) as Item).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-      setItems(fetchedItems);
-    });
-
-    const unsubscribeCategories = onSnapshot(collection(db, "categories"), (snapshot) => {
-      const fetchedCategories = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        name: doc.data().name,
-        subcategories: doc.data().subcategories || [],
-      })) as Category[];
-      if (fetchedCategories.length === 0) {
-        const initialCategories = [
-          { name: "Bikes", subcategories: ["Mountain", "City"] },
-          { name: "Camping", subcategories: ["Tents", "Sleeping Bags"] },
-        ];
-        initialCategories.forEach((cat) => setDoc(doc(db, "categories", cat.name), cat));
-        setCategories(initialCategories.map((cat) => ({ id: cat.name, ...cat })));
-      } else {
-        setCategories(fetchedCategories);
+    const unsubscribeItems = onSnapshot(
+      collection(db, "items"),
+      (snapshot) => {
+        const fetchedItems = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          name: doc.data().name,
+          category: doc.data().category,
+          subcategory: doc.data().subcategory,
+          imageUrl: doc.data().imageUrl,
+          rented: doc.data().rented || 0,
+          inStock: doc.data().inStock || 0,
+          description: doc.data().description || "Ingen beskrivelse tilgjengelig.",
+          gallery: doc.data().gallery || [doc.data().imageUrl],
+          location: doc.data().location || "Unknown",
+          createdAt: doc.data().createdAt || "",
+          createdBy: doc.data().createdBy || "",
+        }) as Item).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        setItems(fetchedItems);
+      },
+      (error) => {
+        setError("Failed to fetch items: " + error.message);
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    }, (error) => {
-      setError("Failed to fetch categories: " + error.message);
-      setIsLoading(false);
-    });
+    );
+
+    const unsubscribeCategories = onSnapshot(
+      collection(db, "categories"),
+      (snapshot) => {
+        const fetchedCategories = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          name: doc.data().name,
+          subcategories: doc.data().subcategories || [],
+          createdAt: doc.data().createdAt || "",
+          createdBy: doc.data().createdBy || "",
+        }) as Category); // Assert each item as Category
+        setCategories(fetchedCategories); // Now correctly typed as Category[]
+        setIsLoading(false);
+      },
+      (error) => {
+        setError("Failed to fetch categories: " + error.message);
+        setIsLoading(false);
+      }
+    );
 
     return () => {
       unsubscribeItems();
@@ -73,41 +113,60 @@ export const useItemsViewModel = () => {
   }, []);
 
   const handleAddItem = async () => {
-    if (!newItem.name || !newItem.category || !newItem.subcategory || !newItem.image || !newItem.location) {
-      setError("All fields are required");
+    const { name, category, subcategory, image, location } = newItem;
+    if (!name.trim() || !category.trim() || !subcategory.trim() || !image || !location.trim()) {
+      setError("All item fields are required");
       return;
     }
+    if (name.length > 100 || category.length > 50 || subcategory.length > 50) {
+      setError("Item name (max 100) and category/subcategory (max 50) have length limits");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const imageRef = ref(storage, `items/${newItem.image.name}`);
-      await uploadBytes(imageRef, newItem.image);
+      const user = auth.currentUser; // Use imported auth
+      if (!user) throw new Error("You must be logged in to add items");
+
+      const imageRef = ref(storage, `items/${Date.now()}_${image.name}`);
+      await uploadBytes(imageRef, image);
       const imageUrl = await getDownloadURL(imageRef);
+
       const itemData = {
-        name: newItem.name,
-        category: newItem.category,
-        subcategory: newItem.subcategory,
+        name: name.trim(),
+        category: category.trim().toLowerCase(),
+        subcategory: subcategory.trim().toLowerCase(),
         imageUrl,
         rented: newItem.rented ?? 0,
         inStock: newItem.inStock ?? 10,
-        location: newItem.location,
+        location: location.trim(),
         createdAt: new Date().toISOString(),
+        createdBy: user.uid,
       };
       await addDoc(collection(db, "items"), itemData);
       setNewItem({ name: "", category: "", subcategory: "", image: null, rented: 0, inStock: 10, location: "" });
       setIsFormOpen(false);
     } catch (error) {
-      setError("Failed to add item: " + (error as Error).message);
+      console.error("Error adding item:", error);
+      setError("Failed to add item: " + (error instanceof Error ? error.message : "Unknown error"));
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDeleteItem = async (id: string) => {
+    if (!id) {
+      setError("Invalid item ID");
+      return;
+    }
     setIsLoading(true);
     try {
+      const user = auth.currentUser; // Use imported auth
+      if (!user) throw new Error("You must be logged in to delete items");
       await deleteDoc(doc(db, "items", id));
     } catch (error) {
-      setError("Failed to delete item: " + (error as Error).message);
+      console.error("Error deleting item:", error);
+      setError("Failed to delete item: " + (error instanceof Error ? error.message : "Unknown error"));
     } finally {
       setIsLoading(false);
     }
@@ -115,40 +174,57 @@ export const useItemsViewModel = () => {
 
   const handleAddCategory = async () => {
     console.log("handleAddCategory called with:", newCategory);
-    if (!newCategory.name || !newCategory.subcategory) {
+    
+    const categoryName = newCategory.name.trim().toLowerCase();
+    const subcategoryName = newCategory.subcategory.trim().toLowerCase();
+
+    if (!categoryName || !subcategoryName) {
       setError("Category name and subcategory are required");
+      return;
+    }
+    if (categoryName.length > 50 || subcategoryName.length > 50) {
+      setError("Category and subcategory names must be 50 characters or less");
       return;
     }
 
     setIsLoading(true);
     try {
-      const categoryRef = doc(db, "categories", newCategory.name);
+      const user = auth.currentUser; // Use imported auth
+      if (!user) {
+        throw new Error("You must be logged in to add categories");
+      }
+
+      const categoryRef = doc(db, "categories", categoryName);
       const categorySnap = await getDoc(categoryRef);
 
       if (categorySnap.exists()) {
         const existingData = categorySnap.data();
-        const subcategories = existingData.subcategories || [];
-        if (!subcategories.includes(newCategory.subcategory)) {
-          const updatedSubcategories = [...subcategories, newCategory.subcategory];
+        const subcategories = Array.isArray(existingData.subcategories) ? existingData.subcategories : [];
+        if (!subcategories.includes(subcategoryName)) {
+          const updatedSubcategories = [...subcategories, subcategoryName];
           await updateDoc(categoryRef, { subcategories: updatedSubcategories });
-          console.log("Added subcategory to existing category:", newCategory.name);
+          console.log("Added subcategory to existing category:", categoryName);
         } else {
-          console.log("Subcategory already exists in", newCategory.name, "- no changes made");
+          console.log("Subcategory already exists in", categoryName, "- no changes made");
+          setError("This tag already exists for the category");
         }
       } else {
         const newCat = {
-          name: newCategory.name,
-          subcategories: [newCategory.subcategory],
+          name: categoryName,
+          subcategories: [subcategoryName],
+          createdAt: new Date().toISOString(),
+          createdBy: user.uid,
         };
         await setDoc(categoryRef, newCat);
-        console.log("Created new category:", newCategory.name);
+        console.log("Created new category:", categoryName);
       }
 
       setNewCategory({ name: "", subcategory: "" });
       setIsCategoryFormOpen(false);
     } catch (error) {
       console.error("Error adding category:", error);
-      setError("Failed to add category: " + (error as Error).message);
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+      setError(`Failed to add category: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
