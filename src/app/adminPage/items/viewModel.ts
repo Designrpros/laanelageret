@@ -131,9 +131,9 @@ export const useItemsViewModel = () => {
         if (!subcategories.includes(newCategory.subcategory)) {
           const updatedSubcategories = [...subcategories, newCategory.subcategory];
           await updateDoc(categoryRef, { subcategories: updatedSubcategories });
-          console.log("Updated category:", newCategory.name);
+          console.log("Added subcategory to existing category:", newCategory.name);
         } else {
-          console.log("Subcategory already exists in", newCategory.name);
+          console.log("Subcategory already exists in", newCategory.name, "- no changes made");
         }
       } else {
         const newCat = {
