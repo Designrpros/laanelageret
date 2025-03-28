@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import styled from "styled-components";
 import { useItemsViewModel } from "./viewModel";
@@ -56,9 +58,9 @@ const Items = () => {
     handleAddCategory,
     filterCategories,
     filteredItems,
-    isLoading,
-    error,
-    clearError,
+    isLoading, // Added for loading state
+    error, // Added for error feedback
+    clearError, // Added to clear errors
   } = useItemsViewModel();
 
   const setDropdownPosition = (buttonRef: HTMLButtonElement | null) => {
@@ -95,7 +97,7 @@ const Items = () => {
         setIsFormOpen={setIsFormOpen}
         isCategoryPickerOpen={isCategoryPickerOpen}
         setIsCategoryPickerOpen={setIsCategoryPickerOpen}
-        categories={categories} // Ensured
+        categories={categories}
         isCategoryFormOpen={isCategoryFormOpen}
         setIsCategoryFormOpen={setIsCategoryFormOpen}
         newCategory={newCategory}
@@ -103,9 +105,9 @@ const Items = () => {
         handleAddItem={handleAddItem}
         handleAddCategory={handleAddCategory}
         setDropdownPosition={setDropdownPosition}
-        isLoading={isLoading}
-        error={error}
-        clearError={clearError}
+        isLoading={isLoading} // Pass loading state
+        error={error} // Pass error feedback
+        clearError={clearError} // Pass clearError function
       />
     </Container>
   );
