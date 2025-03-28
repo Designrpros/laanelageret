@@ -96,6 +96,7 @@ export const ItemList: React.FC<ItemListProps> = (props) => {
         isLoading={props.isLoading}
         error={props.error}
         clearError={props.clearError}
+        categories={props.categories} // Added here
       />
       <CategoryFilterSection
         selectedCategory={props.selectedCategory}

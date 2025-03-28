@@ -114,7 +114,7 @@ interface AddCategoryFormProps {
   isLoading: boolean;
   error: string | null;
   clearError: () => void;
-  categories: Category[];
+  categories: Category[]; // Add categories prop
 }
 
 export const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
@@ -132,28 +132,28 @@ export const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
   const handleSubmit = () => {
     clearError();
     handleAddCategory();
-    setShowSuggestions(false);
+    setShowSuggestions(false); // Hide suggestions after submit
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setNewCategory({ ...newCategory, name: value });
-    setShowSuggestions(value.length > 0);
+    setShowSuggestions(value.length > 0); // Show suggestions when typing
   };
 
   const handleSuggestionClick = (categoryName: string) => {
     setNewCategory({ ...newCategory, name: categoryName });
-    setShowSuggestions(false);
+    setShowSuggestions(false); // Hide suggestions after selection
   };
 
-  const filteredSuggestions = (categories || [])
+  const filteredSuggestions = categories
     .filter((cat) =>
       cat.name.toLowerCase().includes(newCategory.name.toLowerCase().trim())
     )
     .map((cat) => cat.name);
 
   return (
-    <CategoryForm isopen={isCategoryFormOpen ?? false}> {/* Fallback to false */}
+    <CategoryForm isopen={isCategoryFormOpen}>
       <InputContainer>
         <Input
           type="text"
@@ -161,7 +161,7 @@ export const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
           value={newCategory.name}
           onChange={handleCategoryChange}
           onFocus={() => setShowSuggestions(newCategory.name.length > 0)}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Delay to allow click
         />
         {showSuggestions && filteredSuggestions.length > 0 && (
           <SuggestionsList>
