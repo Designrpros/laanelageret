@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useVideoPlayer } from "./useVideoPlayer";
 import styled, { createGlobalStyle } from "styled-components";
 import Toolbar from "./components/Toolbar";
 import { usePathname } from "next/navigation";
@@ -19,23 +20,36 @@ const HeroSection = styled.section`
   z-index: -1;
 `;
 
-const BackgroundImage = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* Ensures the image covers the area like the video did */
+const Video = styled.video<{ opacity: number }>`
   position: absolute;
   top: 0;
   left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: ${(props) => props.opacity};
+  transition: opacity 0.5s ease-in-out;
+  z-index: ${(props) => (props.opacity === 1 ? 1 : 0)};
 `;
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const activeTab = pathname === "/" ? "Home" :
-                    pathname.startsWith("/utlaan") ? "utlaan" :
-                    pathname === "/info" ? "info" :
-                    pathname === "/lever" ? "lever" :
-                    pathname === "/login" ? "login" :
-                    pathname.startsWith("/admin") ? "admin" : "Home";
+  const videoPlaylist = [
+    "/RentalBackground.jpg"
+  ];
+
+  //"/hero-video.mp4",
+  //"/hero-video2.mp4",
+
+  const {
+    currentVideoIndex,
+    nextVideoIndex,
+    opacity,
+    videoRef,
+    nextVideoRef,
+  } = useVideoPlayer(videoPlaylist);
+
+  const activeTab = pathname === "/" ? "Home" : pathname === "/utlaan" ? "utlaan" : "Home";
 
   return (
     <html lang="en">
@@ -43,7 +57,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <body>
         <GlobalStyle />
         <HeroSection>
-          <BackgroundImage src="/RentalBackground.jpg" alt="Rental Background" />
+          <Video autoPlay muted ref={videoRef} opacity={opacity}>
+            <source src={videoPlaylist[currentVideoIndex]} type="video/mp4" />
+          </Video>
+          <video ref={nextVideoRef} muted style={{ display: "none" }}>
+            <source src={videoPlaylist[nextVideoIndex]} type="video/mp4" />
+          </video>
         </HeroSection>
         <Toolbar activeTab={activeTab} onTabChange={() => {}} />
         {children}

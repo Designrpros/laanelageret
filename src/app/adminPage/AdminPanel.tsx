@@ -9,7 +9,7 @@ import Items from "./items/page";
 import LostOrBroken from "./lost-or-broken/page";
 import Receipts from "./receipts/page";
 import History from "./history/page";
-import Analytics from "./analytics/page"; // New import
+import Analytics from "./analytics/page";
 import styled from "styled-components";
 
 const LayoutWrapper = styled.div`

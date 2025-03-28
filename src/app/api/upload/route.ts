@@ -23,6 +23,7 @@ if (!getApps().length) {
     throw error;
   }
 }
+
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get("authorization");

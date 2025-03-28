@@ -1,0 +1,61 @@
+/* Global styles */
+body, html {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    height: 100%;
+    font-family: "Helvetica", Arial, sans-serif;
+    color: white;
+}
+
+/* Overlay for text content */
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 2;
+    padding: 2rem;
+}
+
+/* Text container */
+.text-frame {
+    background: rgba(0, 0, 0, 0.9);
+    padding: 20px 30px;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+/* Title styles */
+.title {
+    font-size: 5rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .title {
+        font-size: 3rem;
+    }
+}
+
+/* Subtitle styles */
+.subtitle {
+    font-size: 1.5rem;
+    margin-top: 10px;
+    font-weight: 300;
+}
+
+@media (max-width: 768px) {
+    .subtitle {
+        font-size: 1.2rem;
+    }
+}
